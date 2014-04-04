@@ -92,7 +92,7 @@
               javax.servlet;version="[2.4,4)",
               *
             </Import-Package>
-            <Export-Package />
+            <Export-Package>${project.artifactId}</Export-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -129,6 +129,11 @@
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.scr.annotations</artifactId>
       <version>1.9.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.util.bundles</groupId>
+      <artifactId>felix-utils-1.2.0</artifactId>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 </project>
