@@ -16,12 +16,17 @@
  */
 package org.everit.osgi.webresource.internal;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
@@ -40,7 +45,7 @@ import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.BundleTracker;
 
 @Component(name = "org.everit.osgi.webresource.WebResourceExtender", configurationFactory = true)
-@Properties({ @Property(name = "targets"), @Property(name = "logService.target") })
+@Properties({ @Property(name = "clauses"), @Property(name = "logService.target") })
 @Service(value = { Servlet.class })
 public class WebResourceExtender extends HttpServlet {
 
@@ -77,10 +82,13 @@ public class WebResourceExtender extends HttpServlet {
     @Reference
     private LogService logService;
 
-    private final Map<String, Map<String, List<WebResource>>> webResourceByFolderPath =
-            new HashMap<String, Map<String, List<WebResource>>>();
+    private LinkedHashSet<WebResource> cachedResources = new LinkedHashSet<WebResource>();
 
-    private BundleTracker<Bundle> webResourceTracker;;
+    private long currentCacheSize = 0;
+
+    private Map<String, FolderContent> rootFolders = new TreeMap<String, FolderContent>();
+
+    private BundleTracker<Bundle> webResourceTracker;
 
     @Activate
     public void activate(BundleContext context) {
@@ -91,5 +99,11 @@ public class WebResourceExtender extends HttpServlet {
     @Deactivate
     public void deactivate() {
         webResourceTracker.close();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String pathInfo = req.getPathInfo();
+
     }
 }

@@ -20,16 +20,23 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class FolderContent {
 
     private final Map<String, List<WebResource>> files = new HashMap<String, List<WebResource>>();
 
-    private long folderSize;
+    private final ReentrantReadWriteLock filesRWLock = new ReentrantReadWriteLock();
 
     private final Map<String, FolderContent> subFolders = new HashMap<String, FolderContent>();
 
+    private final ReentrantReadWriteLock subFoldersRWLock = new ReentrantReadWriteLock();
+
     public void addWebResource(String subFolderPath, URL webResourceURL) {
+
+    }
+
+    public void addSubFolder(String subFolder) {
 
     }
 }

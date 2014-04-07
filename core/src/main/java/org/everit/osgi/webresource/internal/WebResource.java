@@ -85,4 +85,8 @@ public class WebResource {
 
         return result;
     }
+
+    public void clearCache() {
+        cachedValue.set(null);
+    }
 }

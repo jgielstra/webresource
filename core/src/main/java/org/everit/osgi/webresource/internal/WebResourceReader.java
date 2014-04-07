@@ -2,13 +2,13 @@ package org.everit.osgi.webresource.internal;
 
 import java.io.InputStream;
 
-public abstract class WebResourceReader {
+public interface WebResourceReader {
 
-    public abstract String getFileName();
+    String getFileName();
 
-    public abstract InputStream getInputStream(int beginIndex);
+    InputStream getInputStream(int beginIndex);
 
-    public abstract long getLastModified();
+    long getLastModified();
 
-    public abstract long getLength();
+    long getLength();
 }
