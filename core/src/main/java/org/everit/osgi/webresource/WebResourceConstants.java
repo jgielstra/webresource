@@ -20,7 +20,9 @@ public final class WebResourceConstants {
 
     public static final String CAPABILITY_NAMESPACE = "everit.webresource";
 
-    public static final String PROP_PATH = "path";
+    public static final String MIME_TYPE_UNKNOWN = "application/octet-stream";
+
+    public static final String PROP_PATH = "resourcePath";
 
     private WebResourceConstants() {
     }

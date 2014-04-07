@@ -16,24 +16,33 @@
  */
 package org.everit.osgi.webresource.internal;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.servlet.Servlet;
+import javax.servlet.http.HttpServlet;
 
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
+import org.apache.felix.scr.annotations.Reference;
+import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.BundleTracker;
 
-@Component
-@Properties({ @Property(name = "targets") })
-public class WebResourceExtender {
+@Component(name = "org.everit.osgi.webresource.WebResourceExtender", configurationFactory = true)
+@Properties({ @Property(name = "targets"), @Property(name = "logService.target") })
+@Service(value = { Servlet.class })
+public class WebResourceExtender extends HttpServlet {
 
     private class WebResourceBundleTracker extends BundleTracker<Bundle> {
 
@@ -60,7 +69,18 @@ public class WebResourceExtender {
         }
     }
 
-    private BundleTracker<Bundle> webResourceTracker;
+    /**
+     * Serial version.
+     */
+    private static final long serialVersionUID = 1L;
+
+    @Reference
+    private LogService logService;
+
+    private final Map<String, Map<String, List<WebResource>>> webResourceByFolderPath =
+            new HashMap<String, Map<String, List<WebResource>>>();
+
+    private BundleTracker<Bundle> webResourceTracker;;
 
     @Activate
     public void activate(BundleContext context) {
