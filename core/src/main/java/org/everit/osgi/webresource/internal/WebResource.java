@@ -22,30 +22,20 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.wiring.BundleCapability;
 
 public class WebResource {
 
-    private Bundle bundle;
+    private final Bundle bundle;
 
     private AtomicReference<byte[]> cachedValue;
-
-    private final String fileName;
-
-    private final long lastModified;
-
-    private final long length;
 
     private final String mimeType;
 
     private WebResourceReader webResourceReader;
 
-    public WebResource(BundleCapability bundleCapability, URL resourceURL, Properties mimeMapping) {
-        this.lastModified = webResourceReader.getLastModified();
-        this.length = webResourceReader.getLength();
-        this.fileName = webResourceReader.getFileName();
+    public WebResource(Bundle bundle, URL resourceURL, Properties mimeMapping) {
+        this.bundle = bundle;
         this.mimeType = resolveMime(mimeMapping);
-
     }
 
     public Bundle getBundle() {
@@ -53,20 +43,20 @@ public class WebResource {
     }
 
     public String getFileName() {
-        return fileName;
+        return webResourceReader.getFileName();
     }
 
     public long getLastModified() {
-        return lastModified;
+        return webResourceReader.getLastModified();
     }
 
     public long getLength() {
-        return length;
+        return webResourceReader.getLength();
     }
 
     private String resolveMime(Properties mimeMapping) {
         String result = null;
-        String fileNamePart = this.fileName;
+        String fileNamePart = getFileName();
         int indexOfDot = fileNamePart.indexOf('.');
         while (result == null && indexOfDot >= 0) {
             fileNamePart = fileNamePart.substring(indexOfDot);
@@ -77,7 +67,7 @@ public class WebResource {
         }
 
         if (result == null) {
-            result = mimeMapping.getProperty(this.fileName);
+            result = mimeMapping.getProperty(getFileName());
             if (result == null) {
                 result = WebResourceConstants.MIME_TYPE_UNKNOWN;
             }

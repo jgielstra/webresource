@@ -16,9 +16,7 @@
  */
 package org.everit.osgi.webresource.internal;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
@@ -77,8 +75,7 @@ public class WebResourceExtender extends HttpServlet {
     @Reference
     private LogService logService;
 
-    private final Map<String, Map<String, List<WebResource>>> webResourceByFolderPath =
-            new HashMap<String, Map<String, List<WebResource>>>();
+    private final WebFolder rootFolder = new WebFolder(null);
 
     private BundleTracker<Bundle> webResourceTracker;;
 
