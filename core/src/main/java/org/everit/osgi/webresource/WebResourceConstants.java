@@ -18,11 +18,17 @@ package org.everit.osgi.webresource;
 
 public final class WebResourceConstants {
 
+    public static final String CAPABILITY_ATTRIBUTE_PATH = "path";
+
     public static final String CAPABILITY_NAMESPACE = "everit.webresource";
+
+    public static final String CAPABILITY_DIRECTIVE_FILTER = "filter";
+
+    public static final String GZ_EXTENSION = "gz";
 
     public static final String MIME_TYPE_UNKNOWN = "application/octet-stream";
 
-    public static final String PROP_PATH = "resourcePath";
+    public static final String PROP_CLAUSE = "clause";
 
     private WebResourceConstants() {
     }

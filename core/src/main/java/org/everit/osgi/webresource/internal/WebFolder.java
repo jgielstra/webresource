@@ -16,15 +16,18 @@
  */
 package org.everit.osgi.webresource.internal;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.osgi.framework.Bundle;
@@ -37,7 +40,7 @@ public class WebFolder {
 
     private final String folderName;
 
-    private final Set<Long> ownerBundleIds = new HashSet<Long>();
+    private final Set<Long> ownerBundleIds = new ConcurrentSkipListSet<Long>();
 
     private final Map<String, WebFolder> subFolders = new HashMap<String, WebFolder>();
 
@@ -47,24 +50,25 @@ public class WebFolder {
         this.folderName = folderName;
     }
 
-    public void addWebResource(Bundle bundle, String[] splittedFolderPath, int position, URL webResourceURL,
+    public void addWebResource(Bundle bundle, String[] splittedFolderPath, int position, WebResource webResource,
             Properties mimeMapping) {
+        ownerBundleIds.add(bundle.getBundleId());
         if (splittedFolderPath.length - 1 == position) {
-            // Add the webresource to the current folder
-            WriteLock filesWriteLock = filesRWLock.writeLock();
-            filesWriteLock.lock();
-            try {
-                // TODO Handle compressed param
-                WebResource webResource = new WebResource(bundle, webResourceURL, mimeMapping);
-                String fileName = webResource.getFileName();
-                List<WebResource> webResourceList = files.get(fileName);
-                if (webResourceList == null) {
-                    webResourceList = new ArrayList<WebResource>();
-                    files.put(fileName, webResourceList);
+            if (webResource != null) {
+                // Add the webresource to the current folder
+                WriteLock filesWriteLock = filesRWLock.writeLock();
+                filesWriteLock.lock();
+                try {
+                    String fileName = webResource.getFileName();
+                    List<WebResource> webResourceList = files.get(fileName);
+                    if (webResourceList == null) {
+                        webResourceList = new ArrayList<WebResource>();
+                        files.put(fileName, webResourceList);
+                    }
+                    webResourceList.add(webResource);
+                } finally {
+                    filesWriteLock.unlock();
                 }
-                webResourceList.add(webResource);
-            } finally {
-                filesWriteLock.unlock();
             }
         } else {
             WriteLock subFoldersWriteLock = subFoldersRWLock.writeLock();
@@ -76,14 +80,64 @@ public class WebFolder {
                     subFolder = new WebFolder(splittedFolderPath[position + 1]);
                     subFolders.put(subFolderName, subFolder);
                 }
-                subFolder.addWebResource(bundle, splittedFolderPath, position + 1, webResourceURL, mimeMapping);
+                subFolder.addWebResource(bundle, splittedFolderPath, position + 1, webResource, mimeMapping);
             } finally {
                 subFoldersWriteLock.unlock();
             }
         }
     }
 
-    public void removeWebResourcesByBundleId(long bundleId) {
+    public String getFolderName() {
+        return folderName;
+    }
 
+    public Set<Long> getOwnerBundleIds() {
+        return ownerBundleIds;
+    }
+
+    public Map<String, WebFolder> getSubFolders() {
+        ReadLock readLock = subFoldersRWLock.readLock();
+        readLock.lock();
+        TreeMap<String, WebFolder> clone = new TreeMap<String, WebFolder>(subFolders);
+        readLock.unlock();
+        return clone;
+    }
+
+    public void removeByBundleId(long bundleId) {
+        boolean wasOwner = ownerBundleIds.remove(bundleId);
+        if (wasOwner) {
+            // Remove the webResources where the bundle id is the same
+            WriteLock filesWriteLock = filesRWLock.writeLock();
+            Iterator<Entry<String, List<WebResource>>> filesIterator = files.entrySet().iterator();
+            while (filesIterator.hasNext()) {
+                Entry<String, List<WebResource>> fileEntry = filesIterator.next();
+                List<WebResource> webResources = fileEntry.getValue();
+                Iterator<WebResource> webResourceIterator = webResources.iterator();
+                while (webResourceIterator.hasNext()) {
+                    WebResource webResource = webResourceIterator.next();
+                    if (webResource.getBundle().getBundleId() == bundleId) {
+                        webResourceIterator.remove();
+                    }
+                }
+                if (webResources.isEmpty()) {
+                    filesIterator.remove();
+                }
+            }
+            filesWriteLock.unlock();
+
+            // Remove the subFolders recursively
+            WriteLock subFoldersWriteLock = subFoldersRWLock.writeLock();
+            subFoldersWriteLock.lock();
+            Iterator<Entry<String, WebFolder>> subFolderIterator = subFolders.entrySet().iterator();
+            while (subFolderIterator.hasNext()) {
+                Entry<String, WebFolder> subFolderEntry = subFolderIterator.next();
+                WebFolder subFolder = subFolderEntry.getValue();
+                subFolder.removeByBundleId(bundleId);
+                if (subFolder.getOwnerBundleIds().size() == 0) {
+                    subFolderIterator.remove();
+                }
+            }
+            subFoldersWriteLock.unlock();
+        }
     }
 }

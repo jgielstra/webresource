@@ -1,5 +1,6 @@
 package org.everit.osgi.webresource.internal;
 
-public class JarWebResourceReader {
+public enum ContentEncoding {
 
+    DEFAULT, GZIP
 }

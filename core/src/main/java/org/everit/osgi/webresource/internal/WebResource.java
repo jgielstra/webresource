@@ -16,9 +16,12 @@
  */
 package org.everit.osgi.webresource.internal;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.osgi.framework.Bundle;
@@ -27,31 +30,61 @@ public class WebResource {
 
     private final Bundle bundle;
 
-    private AtomicReference<byte[]> cachedValue;
+    private final Map<ContentEncoding, byte[]> cache = new ConcurrentHashMap<ContentEncoding, byte[]>();
 
-    private final String mimeType;
+    private final Map<ContentEncoding, Long> contentLengths = new ConcurrentHashMap<ContentEncoding, Long>();
 
-    private WebResourceReader webResourceReader;
+    private final String contentType;
 
-    public WebResource(Bundle bundle, URL resourceURL, Properties mimeMapping) {
+    private final ContentEncoding fileFormat;
+
+    private final String fileName;
+
+    private final long lastModified;
+
+    private final URL resourceURL;
+
+    public WebResource(Bundle bundle, String fileName, long lastModified, URL resourceURL,
+            String contentType, ContentEncoding contentEncoding) {
+        this.resourceURL = resourceURL;
+        // URLConnection urlConnection = resourceURL.openConnection();
+        // if (urlConnection instanceof JarURLConnection) {
+        // JarURLConnection jarURLConnection = (JarURLConnection) urlConnection;
+        // JarEntry jarEntry = jarURLConnection.getJarEntry();
+        // lastModified = jarEntry.getTime();
+        // size = jarEntry.getSize();
+        // String name = jarEntry.getName();
+        // fileName = name.substring(name.lastIndexOf('/') + 1);
+        // }
         this.bundle = bundle;
-        this.mimeType = resolveMime(mimeMapping);
+        this.contentType = contentType;
+        this.fileName = fileName;
+        this.lastModified = lastModified;
+        this.fileFormat = contentEncoding;
     }
 
     public Bundle getBundle() {
         return bundle;
     }
 
+    public long getContentLength(ContentEncoding contentEncoding) {
+
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
     public String getFileName() {
-        return webResourceReader.getFileName();
+        return fileName;
+    }
+
+    public InputStream getInputStream(int beginIndex) throws IOException {
+        return resourceURL.openStream();
     }
 
     public long getLastModified() {
-        return webResourceReader.getLastModified();
-    }
-
-    public long getLength() {
-        return webResourceReader.getLength();
+        return lastModified;
     }
 
     private String resolveMime(Properties mimeMapping) {
@@ -61,7 +94,7 @@ public class WebResource {
         while (result == null && indexOfDot >= 0) {
             fileNamePart = fileNamePart.substring(indexOfDot);
             result = mimeMapping.getProperty(fileNamePart);
-            if (mimeType == null) {
+            if (contentType == null) {
                 indexOfDot = fileNamePart.indexOf('.');
             }
         }
