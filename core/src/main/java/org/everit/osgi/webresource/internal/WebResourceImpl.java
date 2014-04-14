@@ -21,8 +21,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,26 +46,29 @@ public class WebResourceImpl implements WebResource {
 
     private final String contentType;
 
+    private final String etag;
+
     private final String fileName;
 
     private final long lastModified;
 
-    private final URL resourceURL;
-
     private final String library;
-
-    private final Version version;
 
     private final int rawLength;
 
-    public WebResourceImpl(Bundle bundle, String library, String fileName, URL resourceURL, Version version) {
+    private final URL resourceURL;
+
+    private final Version version;
+
+    public WebResourceImpl(final Bundle bundle, final String library, final String fileName, final URL resourceURL,
+            final Version version) {
         this.resourceURL = resourceURL;
         this.bundle = bundle;
-        this.contentType = WebResourceUtil.resolveContentType(resourceURL);
+        contentType = WebResourceUtil.resolveContentType(resourceURL);
         try {
             URLConnection urlConnection = resourceURL.openConnection();
-            this.lastModified = urlConnection.getLastModified();
-            this.rawLength = urlConnection.getContentLength();
+            lastModified = urlConnection.getLastModified();
+            rawLength = urlConnection.getContentLength();
         } catch (IOException e) {
             // TODO
             throw new RuntimeException(e);
@@ -70,10 +77,54 @@ public class WebResourceImpl implements WebResource {
         this.fileName = fileName;
         this.version = version;
         this.library = library;
+        etag = resolveETag();
     }
 
-    public int getRawLength() {
-        return rawLength;
+    public void destroy() {
+        cache.clear();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        WebResourceImpl other = (WebResourceImpl) obj;
+        if (bundle == null) {
+            if (other.bundle != null) {
+                return false;
+            }
+        } else if (!bundle.equals(other.bundle)) {
+            return false;
+        }
+        if (fileName == null) {
+            if (other.fileName != null) {
+                return false;
+            }
+        } else if (!fileName.equals(other.fileName)) {
+            return false;
+        }
+        if (library == null) {
+            if (other.library != null) {
+                return false;
+            }
+        } else if (!library.equals(other.library)) {
+            return false;
+        }
+        if (version == null) {
+            if (other.version != null) {
+                return false;
+            }
+        } else if (!version.equals(other.version)) {
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -86,6 +137,27 @@ public class WebResourceImpl implements WebResource {
         return bundle;
     }
 
+    @Override
+    public Map<ContentEncoding, Integer> getCacheState() {
+        Map<ContentEncoding, Integer> result = new HashMap<ContentEncoding, Integer>();
+        ContentEncoding[] contentEncodings = ContentEncoding.values();
+        for (ContentEncoding contentEncoding : contentEncodings) {
+            byte[] cachedData = cache.get(contentEncoding);
+            if (cachedData != null) {
+                result.put(contentEncoding, cachedData.length);
+            }
+        }
+        return result;
+    }
+
+    private byte[] getContentData(final ContentEncoding contentEncoding) {
+        byte[] contentData = cache.get(contentEncoding);
+        if (contentData == null) {
+            contentData = readContentIntoCache(contentEncoding);
+        }
+        return contentData;
+    }
+
     /*
      * (non-Javadoc)
      * 
@@ -93,11 +165,102 @@ public class WebResourceImpl implements WebResource {
      * ContentEncoding)
      */
     @Override
-    public long getContentLength(ContentEncoding contentEncoding) {
+    public long getContentLength(final ContentEncoding contentEncoding) {
         return getContentData(contentEncoding).length;
     }
 
-    private synchronized byte[] readContentIntoCache(ContentEncoding contentEncoding) {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.everit.osgi.webresource.internal.WebResource#getContentType()
+     */
+    @Override
+    public String getContentType() {
+        return contentType;
+    }
+
+    @Override
+    public String getEtag() {
+        return etag;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.everit.osgi.webresource.internal.WebResource#getFileName()
+     */
+    @Override
+    public String getFileName() {
+        return fileName;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.everit.osgi.webresource.internal.WebResource#getInputStream(org.everit.osgi.webresource.internal.ContentEncoding
+     * , int)
+     */
+    @Override
+    public InputStream getInputStream(final ContentEncoding contentEncoding, final int beginIndex) throws IOException {
+        byte[] contentData = getContentData(contentEncoding);
+        ByteArrayInputStream bin = new ByteArrayInputStream(contentData);
+        bin.skip(beginIndex);
+        return bin;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.everit.osgi.webresource.internal.WebResource#getLastModified()
+     */
+    @Override
+    public long getLastModified() {
+        return lastModified;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.everit.osgi.webresource.internal.WebResource#getLibrary()
+     */
+    @Override
+    public String getLibrary() {
+        return library;
+    }
+
+    public int getRawLength() {
+        return rawLength;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.everit.osgi.webresource.internal.WebResource#getVersion()
+     */
+    @Override
+    public Version getVersion() {
+        return version;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = (prime * result) + ((bundle == null) ? 0 : bundle.hashCode());
+        result = (prime * result) + ((fileName == null) ? 0 : fileName.hashCode());
+        result = (prime * result) + ((library == null) ? 0 : library.hashCode());
+        result = (prime * result) + ((version == null) ? 0 : version.hashCode());
+        return result;
+    }
+
+    private byte[] longToBytes(final long x) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.putLong(x);
+        return buffer.array();
+    }
+
+    private synchronized byte[] readContentIntoCache(final ContentEncoding contentEncoding) {
         byte[] contentData = cache.get(contentEncoding);
         if (contentData == null) {
             try (InputStream inputStream = resourceURL.openStream();) {
@@ -131,136 +294,25 @@ public class WebResourceImpl implements WebResource {
         return contentData;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.everit.osgi.webresource.internal.WebResource#getContentType()
-     */
-    @Override
-    public String getContentType() {
-        return contentType;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.everit.osgi.webresource.internal.WebResource#getFileName()
-     */
-    @Override
-    public String getFileName() {
-        return fileName;
-    }
-
-    private byte[] getContentData(ContentEncoding contentEncoding) {
-        byte[] contentData = cache.get(contentEncoding);
-        if (contentData == null) {
-            contentData = readContentIntoCache(contentEncoding);
-        }
-        return contentData;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.everit.osgi.webresource.internal.WebResource#getInputStream(org.everit.osgi.webresource.internal.ContentEncoding
-     * , int)
-     */
-    @Override
-    public InputStream getInputStream(ContentEncoding contentEncoding, int beginIndex) throws IOException {
-        byte[] contentData = getContentData(contentEncoding);
-        ByteArrayInputStream bin = new ByteArrayInputStream(contentData);
-        bin.skip(beginIndex);
-        return bin;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.everit.osgi.webresource.internal.WebResource#getLastModified()
-     */
-    @Override
-    public long getLastModified() {
-        return lastModified;
-    }
-
-    public void destroy() {
-        cache.clear();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.everit.osgi.webresource.internal.WebResource#getVersion()
-     */
-    @Override
-    public Version getVersion() {
-        return version;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.everit.osgi.webresource.internal.WebResource#getLibrary()
-     */
-    @Override
-    public String getLibrary() {
-        return library;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((bundle == null) ? 0 : bundle.hashCode());
-        result = prime * result + ((fileName == null) ? 0 : fileName.hashCode());
-        result = prime * result + ((library == null) ? 0 : library.hashCode());
-        result = prime * result + ((version == null) ? 0 : version.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        WebResourceImpl other = (WebResourceImpl) obj;
-        if (bundle == null) {
-            if (other.bundle != null)
-                return false;
-        } else if (!bundle.equals(other.bundle))
-            return false;
-        if (fileName == null) {
-            if (other.fileName != null)
-                return false;
-        } else if (!fileName.equals(other.fileName))
-            return false;
-        if (library == null) {
-            if (other.library != null)
-                return false;
-        } else if (!library.equals(other.library))
-            return false;
-        if (version == null) {
-            if (other.version != null)
-                return false;
-        } else if (!version.equals(other.version))
-            return false;
-        return true;
-    }
-
-    @Override
-    public Map<ContentEncoding, Integer> getCacheState() {
-        Map<ContentEncoding, Integer> result = new HashMap<ContentEncoding, Integer>();
-        ContentEncoding[] contentEncodings = ContentEncoding.values();
-        for (ContentEncoding contentEncoding : contentEncodings) {
-            byte[] cachedData = cache.get(contentEncoding);
-            if (cachedData != null) {
-                result.put(contentEncoding, cachedData.length);
+    private String resolveETag() {
+        try (InputStream in = resourceURL.openStream()) {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            messageDigest.update(library.getBytes());
+            messageDigest.update(fileName.getBytes());
+            messageDigest.update(version.toString().getBytes());
+            byte[] buf = new byte[1024];
+            int r = in.read(buf);
+            while (r > -1) {
+                messageDigest.update(buf, 0, r);
+                r = in.read(buf);
             }
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            bout.write(messageDigest.digest());
+            bout.write(longToBytes(lastModified));
+            return String.format("%x", new BigInteger(1, bout.toByteArray()));
+        } catch (NoSuchAlgorithmException | IOException e) {
+            // TODO
+            throw new RuntimeException(e);
         }
-        return result;
     }
 }

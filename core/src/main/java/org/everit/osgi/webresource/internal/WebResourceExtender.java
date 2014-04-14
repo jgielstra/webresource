@@ -23,9 +23,11 @@ import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -42,6 +44,9 @@ import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.webresource.ContentEncoding;
 import org.everit.osgi.webresource.WebResource;
 import org.everit.osgi.webresource.WebResourceConstants;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -62,12 +67,12 @@ public class WebResourceExtender extends HttpServlet {
 
     private class WebResourceBundleTracker extends BundleTracker<Bundle> {
 
-        public WebResourceBundleTracker(BundleContext context) {
+        public WebResourceBundleTracker(final BundleContext context) {
             super(context, Bundle.ACTIVE, null);
         }
 
         @Override
-        public Bundle addingBundle(Bundle bundle, BundleEvent event) {
+        public Bundle addingBundle(final Bundle bundle, final BundleEvent event) {
             BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
             List<BundleCapability> capabilities = bundleWiring
                     .getCapabilities(WebResourceConstants.CAPABILITY_NAMESPACE);
@@ -136,21 +141,9 @@ public class WebResourceExtender extends HttpServlet {
         }
 
         @Override
-        public void removedBundle(Bundle bundle, BundleEvent event, Bundle object) {
+        public void removedBundle(final Bundle bundle, final BundleEvent event, final Bundle object) {
             resourceContainer.removeBundle(bundle);
         }
-    }
-
-    private String resolveFileName(URL resourceURL) {
-        String externalForm = resourceURL.toExternalForm();
-
-        int indexOfLastSlash = externalForm.lastIndexOf('/');
-        if (indexOfLastSlash >= 0) {
-            return externalForm.substring(indexOfLastSlash + 1);
-        } else {
-            return externalForm;
-        }
-
     }
 
     /**
@@ -158,23 +151,26 @@ public class WebResourceExtender extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
+    private final DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+            .withLocale(Locale.US).withZone(DateTimeZone.forID("GMT"));
+
     @Reference
     private LogService logService;
+
+    private ServiceRegistration<Servlet> pluginSR;
+
+    private final WebResourceContainer resourceContainer = new WebResourceContainer();
 
     private String servicePid;
 
     private BundleTracker<Bundle> webResourceTracker;
 
-    private WebResourceContainer resourceContainer = new WebResourceContainer();
-
-    private ServiceRegistration<Servlet> pluginSR;
-
     @Activate
-    public void activate(BundleContext context, Map<String, Object> configuration) {
-        this.servicePid = (String) configuration.get(Constants.SERVICE_PID);
+    public void activate(final BundleContext context, final Map<String, Object> configuration) {
+        servicePid = (String) configuration.get(Constants.SERVICE_PID);
 
         String alias = (String) configuration.get(WebResourceConstants.PROP_ALIAS);
-        if (alias == null || alias.trim().equals("")) {
+        if ((alias == null) || alias.trim().equals("")) {
             throw new ComponentException(servicePid + " - Property alias must be defined");
         }
 
@@ -188,13 +184,18 @@ public class WebResourceExtender extends HttpServlet {
         pluginSR = context.registerService(Servlet.class, webConsolePlugin, serviceProps);
     }
 
+    @Deactivate
+    public void deactivate() {
+        webResourceTracker.close();
+        pluginSR.unregister();
+    }
+
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        ContentEncoding contentEncoding = ContentEncoding.resolveEncoding(req);
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) {
         String pathInfo = req.getPathInfo();
         int lastIndexOfSlash = pathInfo.lastIndexOf('/');
 
-        if (lastIndexOfSlash == pathInfo.length() - 1) {
+        if (lastIndexOfSlash == (pathInfo.length() - 1)) {
             http404(resp);
             return;
         }
@@ -216,10 +217,20 @@ public class WebResourceExtender extends HttpServlet {
             return;
         }
         resp.setContentType(webResource.getContentType());
+        resp.setHeader("Last-Modified", dateTimeFormatter.print(webResource.getLastModified()));
+        resp.setHeader("ETag", "\"" + webResource.getEtag() + "\"");
+
+        ContentEncoding contentEncoding = ContentEncoding.resolveEncoding(req);
+        resp.setContentLength((int) webResource.getContentLength(contentEncoding));
+
         if (!ContentEncoding.RAW.equals(contentEncoding)) {
             resp.setHeader("Content-Encoding", contentEncoding.getHeaderValue());
         }
-        resp.setContentLength((int) webResource.getContentLength(contentEncoding));
+
+        if (etagMatchFound(req, webResource)) {
+            resp.setStatus(304);
+            return;
+        }
 
         try {
             ServletOutputStream out = resp.getOutputStream();
@@ -239,7 +250,35 @@ public class WebResourceExtender extends HttpServlet {
         }
     }
 
-    private void http404(HttpServletResponse resp) {
+    @Override
+    protected void doHead(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
+            IOException {
+        // TODO Handle head requests
+        super.doHead(req, resp);
+    }
+
+    private boolean etagMatchFound(final HttpServletRequest request, final WebResource webResource) {
+        String ifNoneMatchHeader = request.getHeader("If-None-Match");
+        if (ifNoneMatchHeader == null) {
+            return false;
+        }
+        String[] etags = ifNoneMatchHeader.split(",");
+        int i = 0;
+        int n = etags.length;
+        boolean matchFound = false;
+        while (!matchFound && (i < n)) {
+            String etag = etags[i].trim();
+            if (etag.equals("\"" + webResource.getEtag() + "\"")) {
+                matchFound = true;
+            } else {
+                i++;
+            }
+        }
+        return matchFound;
+
+    }
+
+    private void http404(final HttpServletResponse resp) {
         try {
             resp.sendError(404, "Resource cannot found");
         } catch (IOException e) {
@@ -248,9 +287,15 @@ public class WebResourceExtender extends HttpServlet {
         }
     }
 
-    @Deactivate
-    public void deactivate() {
-        webResourceTracker.close();
-        pluginSR.unregister();
+    private String resolveFileName(final URL resourceURL) {
+        String externalForm = resourceURL.toExternalForm();
+
+        int indexOfLastSlash = externalForm.lastIndexOf('/');
+        if (indexOfLastSlash >= 0) {
+            return externalForm.substring(indexOfLastSlash + 1);
+        } else {
+            return externalForm;
+        }
+
     }
 }

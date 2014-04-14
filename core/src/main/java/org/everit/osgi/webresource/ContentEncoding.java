@@ -23,19 +23,9 @@ import javax.servlet.http.HttpServletRequest;
 
 public enum ContentEncoding {
 
-    RAW("raw"), DEFLATE("deflate"), GZIP("gzip");
+    DEFLATE("deflate"), GZIP("gzip"), RAW("raw");
 
-    private final String headerValue;
-
-    private ContentEncoding(String headerValue) {
-        this.headerValue = headerValue;
-    }
-
-    public String getHeaderValue() {
-        return headerValue;
-    }
-
-    public static ContentEncoding resolveEncoding(HttpServletRequest request) {
+    public static ContentEncoding resolveEncoding(final HttpServletRequest request) {
         String acceptEncodingHeader = request.getHeader("Accept-Encoding");
         if (acceptEncodingHeader == null) {
             return RAW;
@@ -49,5 +39,15 @@ public enum ContentEncoding {
             return DEFLATE;
         }
         return RAW;
+    }
+
+    private final String headerValue;
+
+    private ContentEncoding(final String headerValue) {
+        this.headerValue = headerValue;
+    }
+
+    public String getHeaderValue() {
+        return headerValue;
     }
 }

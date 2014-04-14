@@ -18,21 +18,21 @@ package org.everit.osgi.webresource;
 
 public final class WebResourceConstants {
 
-    public static final String CAPABILITY_ATTRIBUTE_LIBRARY_PREFIX = "library";
+    public static final String CAPABILITY_ATTRIBUTE_LIBRARY_PREFIX = "libraryPrefix";
 
     public static final String CAPABILITY_ATTRIBUTE_RESOURCE_FOLDER = "resourceFolder";
-
-    public static final String CAPABILITY_NAMESPACE = "everit.webresource";
 
     public static final String CAPABILITY_ATTRIBUTE_VERSION = "version";
 
     public static final String CAPABILITY_DIRECTIVE_FILTER = "filter";
 
+    public static final String CAPABILITY_NAMESPACE = "everit.webresource";
+
     public static final String MIME_TYPE_UNKNOWN = "application/octet-stream";
 
-    public static final String PROP_ALIAS = "alias";
+    public static final String PARAM_VERSION = "webresource_version";
 
-    public static final String PARAM_VERSION = "version";
+    public static final String PROP_ALIAS = "alias";
 
     private WebResourceConstants() {
     }

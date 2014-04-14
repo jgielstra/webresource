@@ -34,14 +34,19 @@ import org.osgi.framework.Version;
 
 public class WebResourceWebConsolePlugin extends HttpServlet {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private final WebResourceContainer resourceContainer;
 
-    public WebResourceWebConsolePlugin(WebResourceContainer resourceContainer) {
+    public WebResourceWebConsolePlugin(final WebResourceContainer resourceContainer) {
         this.resourceContainer = resourceContainer;
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
+            IOException {
         PrintWriter writer = resp.getWriter();
         writer.write("<table class='content'><tr><th class='content container' colspan='8'>Web resources</th></tr>");
         writer.write("<tr><th class='content'>Library</th>");
@@ -119,16 +124,16 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
         return "everit-webresource";
     }
 
-    public String getTitle()
-    {
-        return "Everit Webresource";
-    }
-
-    private String getStringValue(Integer value) {
+    private String getStringValue(final Integer value) {
         if (value == null) {
             return "empty";
         } else {
             return value.toString();
         }
+    }
+
+    public String getTitle()
+    {
+        return "Everit Webresource";
     }
 }

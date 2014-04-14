@@ -26,6 +26,6 @@ public interface WebResourceLocator {
      *            The version. Range expression is accepted.
      * @return The full path of the web resource or null if the web resource does not exist.
      */
-    String resolveWebResourcePath(String lib, String file, String version);
+    String resolveWebResourcePath(String lib, String file, String version, boolean appendLastModifiedParameter);
 
 }

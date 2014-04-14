@@ -31,10 +31,10 @@ import org.osgi.framework.Version;
 
 public class LibContainer {
 
-    private Map<String, NavigableMap<Version, Set<WebResourceImpl>>> versionedResourcesByName =
+    private final Map<String, NavigableMap<Version, Set<WebResourceImpl>>> versionedResourcesByName =
             new ConcurrentSkipListMap<>();
 
-    public synchronized void addWebResource(WebResourceImpl resource) {
+    public synchronized void addWebResource(final WebResourceImpl resource) {
         String fileName = resource.getFileName();
         NavigableMap<Version, Set<WebResourceImpl>> resourcesByVersion = versionedResourcesByName.get(fileName);
         if (resourcesByVersion == null) {
@@ -51,7 +51,53 @@ public class LibContainer {
 
     }
 
-    public synchronized void removeWebResource(WebResource resource) {
+    public WebResource findWebResource(final String resourceName, final VersionRange versionRange) {
+        NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion = versionedResourcesByName.get(resourceName);
+        if ((resourceByVersion == null) || (resourceByVersion.size() == 0)) {
+            // There is no resource by the name
+            return null;
+        }
+        if ((versionRange == null) || versionRange.getCeiling().equals(VersionRange.INFINITE_VERSION)) {
+            // Selecting the highest version of the resource
+            WebResource webResource = selectResourceWithHighestVersion(resourceByVersion);
+            Version version = webResource.getVersion();
+            if (versionRange.contains(version)) {
+                return webResource;
+            } else {
+                return null;
+            }
+        }
+
+        if (versionRange.isPointVersion()) {
+            // Selecting an exact version of resource. Normally comes with expression [x, x] where x is the same.
+            Set<WebResourceImpl> resources = resourceByVersion.get(versionRange.getFloor());
+            return selectResourceFromSet(resources);
+        }
+
+        WebResource result = null;
+        Version ceilingVersion = versionRange.getCeiling();
+        Entry<Version, Set<WebResourceImpl>> potentialEntry = null;
+        if (!versionRange.isOpenCeiling()) {
+            potentialEntry = resourceByVersion.floorEntry(ceilingVersion);
+        } else {
+            potentialEntry = resourceByVersion.lowerEntry(ceilingVersion);
+        }
+        if ((potentialEntry != null) && versionRange.contains(potentialEntry.getKey())) {
+            result = selectResourceFromSet(potentialEntry.getValue());
+        }
+
+        return result;
+    }
+
+    Map<String, NavigableMap<Version, Set<WebResourceImpl>>> getVersionedResourcesByName() {
+        return versionedResourcesByName;
+    }
+
+    public boolean isEmpty() {
+        return versionedResourcesByName.size() == 0;
+    }
+
+    public synchronized void removeWebResource(final WebResource resource) {
         String fileName = resource.getFileName();
         NavigableMap<Version, Set<WebResourceImpl>> resourcesByVersion = versionedResourcesByName.get(fileName);
         Version version = resource.getVersion();
@@ -65,53 +111,7 @@ public class LibContainer {
         }
     }
 
-    public boolean isEmpty() {
-        return versionedResourcesByName.size() == 0;
-    }
-
-    public WebResource findWebResource(String resourceName, VersionRange versionRange) {
-        NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion = versionedResourcesByName.get(resourceName);
-        if (resourceByVersion == null || resourceByVersion.size() == 0) {
-            // There is no resource by the name
-            return null;
-        }
-        if (versionRange == null || versionRange.getCeiling().equals(VersionRange.INFINITE_VERSION)) {
-            // Selecting the highest version of the resource
-            return selectResourceWithHighestVersion(resourceByVersion);
-        }
-
-        if (versionRange.isPointVersion()) {
-            // Selecting an exact version of resource. Normally comes with expression [x, x] where x is the same.
-            Set<WebResourceImpl> resources = resourceByVersion.get(versionRange.getFloor());
-            return selectResourceFromSet(resources);
-        }
-
-        WebResource result = null;
-        Version ceilingVersion = versionRange.getCeiling();
-        Entry<Version, Set<WebResourceImpl>> potentialEntry = null;
-        if (versionRange.isOpenCeiling()) {
-            potentialEntry = resourceByVersion.ceilingEntry(ceilingVersion);
-        } else {
-            potentialEntry = resourceByVersion.lowerEntry(ceilingVersion);
-        }
-        if (potentialEntry != null && versionRange.contains(potentialEntry.getKey())) {
-            result = selectResourceFromSet(potentialEntry.getValue());
-        }
-
-        return result;
-    }
-
-    private WebResource selectResourceWithHighestVersion(NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion) {
-        Entry<Version, Set<WebResourceImpl>> lastEntry = resourceByVersion.lastEntry();
-        if (lastEntry != null) {
-            return selectResourceFromSet(lastEntry.getValue());
-        } else {
-            // This could happen if the resource is removed on a parallel thread after the size is checked.
-            return null;
-        }
-    }
-
-    private WebResource selectResourceFromSet(Set<WebResourceImpl> resources) {
+    private WebResource selectResourceFromSet(final Set<WebResourceImpl> resources) {
         if (resources == null) {
             return null;
         }
@@ -124,7 +124,14 @@ public class LibContainer {
         }
     }
 
-    Map<String, NavigableMap<Version, Set<WebResourceImpl>>> getVersionedResourcesByName() {
-        return versionedResourcesByName;
+    private WebResource selectResourceWithHighestVersion(
+            final NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion) {
+        Entry<Version, Set<WebResourceImpl>> lastEntry = resourceByVersion.lastEntry();
+        if (lastEntry != null) {
+            return selectResourceFromSet(lastEntry.getValue());
+        } else {
+            // This could happen if the resource is removed on a parallel thread after the size is checked.
+            return null;
+        }
     }
 }

@@ -38,12 +38,12 @@ public class WebResourceUtil {
         }
     }
 
-    public static String resolveContentType(URL url) {
+    public static String resolveContentType(final URL url) {
         String extension = url.toExternalForm();
         int lastIndexOfSlash = extension.lastIndexOf('/');
 
         if (lastIndexOfSlash > 0) {
-            if (lastIndexOfSlash < extension.length() - 1) {
+            if (lastIndexOfSlash < (extension.length() - 1)) {
                 extension = extension.substring(lastIndexOfSlash + 1);
             } else {
                 return UNKNOWN_CONTENT_TYPE;
@@ -52,8 +52,8 @@ public class WebResourceUtil {
 
         int indexOfExtensionSeparator = extension.indexOf('.');
         String contentType = null;
-        while (indexOfExtensionSeparator >= 0 && contentType == null) {
-            if (indexOfExtensionSeparator == extension.length() - 1) {
+        while ((indexOfExtensionSeparator >= 0) && (contentType == null)) {
+            if (indexOfExtensionSeparator == (extension.length() - 1)) {
                 contentType = UNKNOWN_CONTENT_TYPE;
             } else {
                 extension = extension.substring(indexOfExtensionSeparator + 1);

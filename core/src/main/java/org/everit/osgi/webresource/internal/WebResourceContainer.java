@@ -28,23 +28,11 @@ import org.osgi.framework.Bundle;
 
 public class WebResourceContainer {
 
-    private Map<Bundle, Set<WebResource>> webResourcesByBundles = new ConcurrentHashMap<>();
-
     private Map<String, LibContainer> libContainersByName = new ConcurrentSkipListMap<>();
 
-    public WebResource findWebResource(String lib, String resourceName, String version) {
-        LibContainer libContainer = libContainersByName.get(lib);
-        if (libContainer == null) {
-            return null;
-        }
-        // TODO probably cache version ranges to have better performance
-        VersionRange versionRange = VersionRange.parseVersionRange(version);
-        WebResource webResource = libContainer.findWebResource(resourceName, versionRange);
+    private Map<Bundle, Set<WebResource>> webResourcesByBundles = new ConcurrentHashMap<>();
 
-        return webResource;
-    }
-
-    public synchronized void addWebResource(WebResourceImpl webResource) {
+    public synchronized void addWebResource(final WebResourceImpl webResource) {
         Bundle bundle = webResource.getBundle();
         Set<WebResource> resources = webResourcesByBundles.get(bundle);
         if (resources == null) {
@@ -62,7 +50,23 @@ public class WebResourceContainer {
         libContainer.addWebResource(webResource);
     }
 
-    public synchronized void removeBundle(Bundle bundle) {
+    public WebResource findWebResource(final String lib, final String resourceName, final String version) {
+        LibContainer libContainer = libContainersByName.get(lib);
+        if (libContainer == null) {
+            return null;
+        }
+        // TODO probably cache version ranges to have better performance
+        VersionRange versionRange = VersionRange.parseVersionRange(version);
+        WebResource webResource = libContainer.findWebResource(resourceName, versionRange);
+
+        return webResource;
+    }
+
+    Map<String, LibContainer> getLibContainersByName() {
+        return libContainersByName;
+    }
+
+    public synchronized void removeBundle(final Bundle bundle) {
         Set<WebResource> webResources = webResourcesByBundles.remove(bundle);
         for (WebResource webResource : webResources) {
             String library = webResource.getLibrary();
@@ -72,9 +76,5 @@ public class WebResourceContainer {
                 libContainersByName.remove(library);
             }
         }
-    }
-
-    Map<String, LibContainer> getLibContainersByName() {
-        return libContainersByName;
     }
 }

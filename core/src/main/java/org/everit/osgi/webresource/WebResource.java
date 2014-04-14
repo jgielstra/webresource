@@ -27,9 +27,13 @@ public interface WebResource {
 
     Bundle getBundle();
 
+    Map<ContentEncoding, Integer> getCacheState();
+
     long getContentLength(ContentEncoding contentEncoding);
 
     String getContentType();
+
+    String getEtag();
 
     String getFileName();
 
@@ -37,10 +41,8 @@ public interface WebResource {
 
     long getLastModified();
 
-    Version getVersion();
-
     String getLibrary();
 
-    Map<ContentEncoding, Integer> getCacheState();
+    Version getVersion();
 
 }

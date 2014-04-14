@@ -52,7 +52,7 @@
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Import-Package>*</Import-Package>
             <Export-Package />
-            <Provide-Capability>everit.webresource;resourceFolder=/META-INF/resources/lib1;library=site1</Provide-Capability>
+            <Provide-Capability>everit.webresource;resourceFolder=/META-INF/resources/lib1;libraryPrefix=site1</Provide-Capability>
             <EOSGi-TestNum>0</EOSGi-TestNum>
           </instructions>
         </configuration>
