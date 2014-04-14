@@ -16,24 +16,31 @@
  */
 package org.everit.osgi.webresource;
 
-public final class WebResourceConstants {
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
-    public static final String CAPABILITY_ATTRIBUTE_LIBRARY_PREFIX = "library";
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Version;
 
-    public static final String CAPABILITY_ATTRIBUTE_RESOURCE_FOLDER = "resourceFolder";
+public interface WebResource {
 
-    public static final String CAPABILITY_NAMESPACE = "everit.webresource";
+    Bundle getBundle();
 
-    public static final String CAPABILITY_ATTRIBUTE_VERSION = "version";
+    long getContentLength(ContentEncoding contentEncoding);
 
-    public static final String CAPABILITY_DIRECTIVE_FILTER = "filter";
+    String getContentType();
 
-    public static final String MIME_TYPE_UNKNOWN = "application/octet-stream";
+    String getFileName();
 
-    public static final String PROP_ALIAS = "alias";
+    InputStream getInputStream(ContentEncoding contentEncoding, int beginIndex) throws IOException;
 
-    public static final String PARAM_VERSION = "version";
+    long getLastModified();
 
-    private WebResourceConstants() {
-    }
+    Version getVersion();
+
+    String getLibrary();
+
+    Map<ContentEncoding, Integer> getCacheState();
+
 }
