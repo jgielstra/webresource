@@ -39,8 +39,14 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
     private final WebResourceContainer resourceContainer;
+    private final String aliasPrefix;
 
-    public WebResourceWebConsolePlugin(final WebResourceContainer resourceContainer) {
+    public WebResourceWebConsolePlugin(final WebResourceContainer resourceContainer, String alias) {
+        if (alias == null || alias.trim().equals("")) {
+            this.aliasPrefix = "";
+        } else {
+            aliasPrefix = alias;
+        }
         this.resourceContainer = resourceContainer;
     }
 
@@ -83,7 +89,11 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
                     Set<WebResourceImpl> resources = resourcesByVersionEntry.getValue();
                     for (WebResourceImpl resource : resources) {
                         writer.write("<tr><td class='content'>" + library + "</td>");
-                        writer.write("<td class='content'>" + fileName + "</td>");
+
+                        writer.write("<td class='content'><a href=\"" + aliasPrefix + "/" + library + "/" + fileName
+                                + "?webresource_version=[" + version.toString() + "," + version.toString() + "]\">"
+                                + fileName
+                                + "</a></td>");
                         writer.write("<td class='content'>" + version + "</td>");
                         writer.write("<td class='content'>" + resource.getContentType() + "</td>");
                         writer.write("<td class='content'>" + resource.getRawLength() + "</td>");

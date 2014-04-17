@@ -123,6 +123,9 @@ public class WebResourceExtender extends HttpServlet {
                             if (library.startsWith("/")) {
                                 library = library.substring(1);
                             }
+                            if (library.endsWith("/")) {
+                                library = library.substring(0, library.length() - 1);
+                            }
 
                             WebResourceImpl webResource = new WebResourceImpl(bundle, library, fileName, resourceURL,
                                     version);
@@ -177,7 +180,7 @@ public class WebResourceExtender extends HttpServlet {
         webResourceTracker = new WebResourceBundleTracker(context);
         webResourceTracker.open();
 
-        WebResourceWebConsolePlugin webConsolePlugin = new WebResourceWebConsolePlugin(resourceContainer);
+        WebResourceWebConsolePlugin webConsolePlugin = new WebResourceWebConsolePlugin(resourceContainer, alias);
         Dictionary<String, Object> serviceProps = new Hashtable<>();
         serviceProps.put("felix.webconsole.label", "everit-webresources");
         serviceProps.put("felix.webconsole.title", "Everit Webresource");
