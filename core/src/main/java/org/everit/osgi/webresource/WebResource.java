@@ -14,13 +14,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - WebResource.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.webresource.internal;
+package org.everit.osgi.webresource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import org.everit.osgi.webresource.ContentEncoding;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 

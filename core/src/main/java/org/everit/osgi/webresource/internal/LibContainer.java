@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.apache.felix.utils.version.VersionRange;
+import org.everit.osgi.webresource.WebResource;
 import org.osgi.framework.Version;
 
 public class LibContainer {

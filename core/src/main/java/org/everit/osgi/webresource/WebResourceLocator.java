@@ -19,13 +19,14 @@ package org.everit.osgi.webresource;
 public interface WebResourceLocator {
 
     /**
-     * 
+     *
      * @param lib
      * @param file
      * @param version
      *            The version. Range expression is accepted.
      * @return The full path of the web resource or null if the web resource does not exist.
      */
-    String resolveWebResourcePath(String lib, String file, String version, boolean appendLastModifiedParameter);
+    WebResource resolveWebResource(String lib, String file, String version,
+            boolean appendLastModifiedParameter);
 
 }

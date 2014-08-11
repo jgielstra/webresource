@@ -33,7 +33,6 @@ public class WebResourceUtil {
                 .getResourceAsStream("/META-INF/default-content-types.properties")) {
             DEFAULT_CONTENT_TYPES.load(inputStream);
         } catch (IOException e) {
-            // TODO
             throw new RuntimeException(e);
         }
     }

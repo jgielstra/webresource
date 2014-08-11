@@ -34,6 +34,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.everit.osgi.webresource.ContentEncoding;
+import org.everit.osgi.webresource.WebResource;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Version;
 

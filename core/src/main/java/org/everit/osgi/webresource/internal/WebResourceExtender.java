@@ -25,11 +25,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,6 +46,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.webresource.ContentEncoding;
+import org.everit.osgi.webresource.WebResource;
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -59,9 +63,10 @@ import org.osgi.service.component.ComponentException;
 import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.BundleTracker;
 
-@Component(name = "org.everit.osgi.webresource.WebResourceExtender", configurationFactory = true, immediate = true,
-        policy = ConfigurationPolicy.REQUIRE, metatype = true)
-@Properties({ @Property(name = "alias"), @Property(name = "logService.target") })
+@Component(name = "org.everit.osgi.webresource.WebResourceExtender", configurationFactory = false, immediate = true,
+        policy = ConfigurationPolicy.OPTIONAL, metatype = true)
+@Properties({ @Property(name = "logService.target"),
+        @Property(name = Constants.SERVICE_DESCRIPTION, propertyPrivate = false) })
 @Service(value = { Servlet.class })
 public class WebResourceExtender extends HttpServlet {
 
@@ -154,6 +159,8 @@ public class WebResourceExtender extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
+    private BundleContext bundleContext;
+
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
             .withLocale(Locale.US).withZone(DateTimeZone.forID("GMT"));
 
@@ -170,6 +177,7 @@ public class WebResourceExtender extends HttpServlet {
 
     @Activate
     public void activate(final BundleContext context, final Map<String, Object> configuration) {
+        this.bundleContext = context;
         servicePid = (String) configuration.get(Constants.SERVICE_PID);
 
         String alias = (String) configuration.get(WebResourceConstants.PROP_ALIAS);
@@ -259,13 +267,6 @@ public class WebResourceExtender extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doHead(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
-            IOException {
-        // TODO Handle head requests
-        super.doHead(req, resp);
-    }
-
     private boolean etagMatchFound(final HttpServletRequest request, final WebResource webResource) {
         String ifNoneMatchHeader = request.getHeader("If-None-Match");
         if (ifNoneMatchHeader == null) {
@@ -298,8 +299,15 @@ public class WebResourceExtender extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        // TODO Auto-generated method stub
         super.init(config);
+
+        String servletName = config.getServletName();
+        Objects.requireNonNull(servletName, "Servlet name must not be null!");
+        ServletContext servletContext = config.getServletContext();
+        String servletContextPath = servletContext.getContextPath();
+        ServletRegistration servletRegistration = servletContext.getServletRegistration(servletName);
+        Collection<String> mappings = servletRegistration.getMappings();
+
     }
 
     private String resolveFileName(final URL resourceURL) {
