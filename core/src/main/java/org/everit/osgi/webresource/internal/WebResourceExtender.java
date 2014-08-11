@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.Servlet;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -42,7 +43,6 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.webresource.ContentEncoding;
-import org.everit.osgi.webresource.WebResource;
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -194,6 +194,12 @@ public class WebResourceExtender extends HttpServlet {
     }
 
     @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
+        super.destroy();
+    }
+
+    @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) {
         String pathInfo = req.getPathInfo();
         int lastIndexOfSlash = pathInfo.lastIndexOf('/');
@@ -288,6 +294,12 @@ public class WebResourceExtender extends HttpServlet {
             // TODO
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        // TODO Auto-generated method stub
+        super.init(config);
     }
 
     private String resolveFileName(final URL resourceURL) {

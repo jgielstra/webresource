@@ -11,9 +11,11 @@ import org.everit.osgi.webresource.WebResourceLocator;
 
 public class WebResourceLocatorImpl implements WebResourceLocator {
 
-    private String servletName;
+    private final String servletContextPath;
 
-    private String servletContextPath;
+    private final String servletName;
+
+    private String servletPath;
 
     public WebResourceLocatorImpl(ServletConfig servletConfig) {
         this.servletName = servletConfig.getServletName();
