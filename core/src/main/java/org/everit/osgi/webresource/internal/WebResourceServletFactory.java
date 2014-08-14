@@ -19,18 +19,21 @@ package org.everit.osgi.webresource.internal;
 import javax.servlet.Servlet;
 
 import org.everit.osgi.service.servlet.ServletFactory;
+import org.everit.osgi.webresource.WebResourceContainer;
 
 public class WebResourceServletFactory implements ServletFactory {
 
     private final WebResourceContainer resourceContainer;
+    private final WebResourceUtil webResourceUtil;
 
-    public WebResourceServletFactory(WebResourceContainer resourceContainer) {
+    public WebResourceServletFactory(WebResourceContainer resourceContainer, WebResourceUtil webResourceUtil) {
         this.resourceContainer = resourceContainer;
+        this.webResourceUtil = webResourceUtil;
     }
 
     @Override
     public Servlet createServlet() {
-        return new WebResourceServlet(resourceContainer);
+        return new WebResourceServlet(resourceContainer, webResourceUtil);
     }
 
 }

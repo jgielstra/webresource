@@ -18,19 +18,22 @@ package org.everit.osgi.webresource.internal;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.apache.felix.utils.version.VersionRange;
 import org.everit.osgi.webresource.WebResource;
+import org.everit.osgi.webresource.WebResourceContainer;
 import org.osgi.framework.Bundle;
 
-public class WebResourceContainer {
+public class WebResourceContainerImpl implements WebResourceContainer {
 
-    private Map<String, LibContainer> libContainersByName = new ConcurrentSkipListMap<>();
+    private final Map<String, LibContainer> libContainersByName = new ConcurrentSkipListMap<>();
 
-    private Map<Bundle, Set<WebResource>> webResourcesByBundles = new ConcurrentHashMap<>();
+    private final Map<Bundle, Set<WebResource>> webResourcesByBundles = new ConcurrentHashMap<>();
 
     public synchronized void addWebResource(final WebResourceImpl webResource) {
         Bundle bundle = webResource.getBundle();
@@ -50,16 +53,19 @@ public class WebResourceContainer {
         libContainer.addWebResource(webResource);
     }
 
-    public WebResource findWebResource(final String lib, final String resourceName, final String version) {
+    @Override
+    public Optional<WebResource> findWebResource(final String lib, final String resourceName, final String version) {
+        Objects.requireNonNull(lib, "WebResource library must not be null");
+        Objects.requireNonNull(lib, "WebResource name must not be null");
+
         LibContainer libContainer = libContainersByName.get(lib);
         if (libContainer == null) {
-            return null;
+            return Optional.empty();
         }
-        // TODO probably cache version ranges to have better performance
-        VersionRange versionRange = VersionRange.parseVersionRange(version);
-        WebResource webResource = libContainer.findWebResource(resourceName, versionRange);
 
-        return webResource;
+        VersionRange versionRange = VersionRange.parseVersionRange(version);
+        return libContainer.findWebResource(resourceName, versionRange);
+
     }
 
     Map<String, LibContainer> getLibContainersByName() {

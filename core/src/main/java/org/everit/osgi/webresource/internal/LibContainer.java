@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -51,20 +52,26 @@ public class LibContainer {
 
     }
 
-    public WebResource findWebResource(final String resourceName, final VersionRange versionRange) {
+    public Optional<WebResource> findWebResource(final String resourceName, final VersionRange versionRange) {
         NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion = versionedResourcesByName.get(resourceName);
         if ((resourceByVersion == null) || (resourceByVersion.size() == 0)) {
             // There is no resource by the name
-            return null;
+            return Optional.empty();
         }
         if ((versionRange == null) || versionRange.getCeiling().equals(VersionRange.INFINITE_VERSION)) {
             // Selecting the highest version of the resource
-            WebResource webResource = selectResourceWithHighestVersion(resourceByVersion);
-            Version version = webResource.getVersion();
-            if (versionRange.contains(version)) {
-                return webResource;
+            Optional<WebResource> optionalWebResource = selectResourceWithHighestVersion(resourceByVersion);
+
+            if (optionalWebResource.isPresent()) {
+                WebResource webResource = optionalWebResource.get();
+                Version version = webResource.getVersion();
+                if (versionRange.contains(version)) {
+                    return Optional.of(webResource);
+                } else {
+                    return Optional.empty();
+                }
             } else {
-                return null;
+                return Optional.empty();
             }
         }
 
@@ -74,7 +81,7 @@ public class LibContainer {
             return selectResourceFromSet(resources);
         }
 
-        WebResource result = null;
+        Optional<WebResource> result = null;
         Version ceilingVersion = versionRange.getCeiling();
         Entry<Version, Set<WebResourceImpl>> potentialEntry = null;
         if (!versionRange.isOpenCeiling()) {
@@ -111,27 +118,27 @@ public class LibContainer {
         }
     }
 
-    private WebResource selectResourceFromSet(final Set<WebResourceImpl> resources) {
+    private Optional<WebResource> selectResourceFromSet(final Set<WebResourceImpl> resources) {
         if (resources == null) {
             return null;
         }
         // TODO what if the set gets empty in the moment where the iterator is requested.
         Iterator<WebResourceImpl> iterator = resources.iterator();
         if (iterator.hasNext()) {
-            return iterator.next();
+            return Optional.of(iterator.next());
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 
-    private WebResource selectResourceWithHighestVersion(
+    private Optional<WebResource> selectResourceWithHighestVersion(
             final NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion) {
         Entry<Version, Set<WebResourceImpl>> lastEntry = resourceByVersion.lastEntry();
         if (lastEntry != null) {
             return selectResourceFromSet(lastEntry.getValue());
         } else {
             // This could happen if the resource is removed on a parallel thread after the size is checked.
-            return null;
+            return Optional.empty();
         }
     }
 }

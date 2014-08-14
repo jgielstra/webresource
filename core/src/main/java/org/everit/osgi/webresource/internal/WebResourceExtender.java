@@ -34,6 +34,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.everit.osgi.service.servlet.ServletFactory;
 import org.everit.osgi.webresource.WebResourceConstants;
+import org.everit.osgi.webresource.WebResourceContainer;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -42,7 +43,6 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.Version;
 import org.osgi.framework.wiring.BundleCapability;
 import org.osgi.framework.wiring.BundleWiring;
-import org.osgi.service.component.ComponentException;
 import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.BundleTracker;
 
@@ -113,8 +113,9 @@ public class WebResourceExtender {
                                 library = library.substring(0, library.length() - 1);
                             }
 
+                            String contentType = webResourceUtil.resolveContentType(resourceURL);
                             WebResourceImpl webResource = new WebResourceImpl(bundle, library, fileName, resourceURL,
-                                    version);
+                                    version, contentType);
                             resourceContainer.addWebResource(webResource);
                             webResourceAdded = true;
                         }
@@ -144,36 +145,39 @@ public class WebResourceExtender {
 
     private ServiceRegistration<Servlet> pluginSR;
 
-    private final WebResourceContainer resourceContainer = new WebResourceContainer();
+    private final WebResourceContainerImpl resourceContainer = new WebResourceContainerImpl();
 
-    private String servicePid;
+    private ServiceRegistration<WebResourceContainer> resourceContainerSR;
 
     private ServiceRegistration<ServletFactory> servletFactorySR;
 
     private BundleTracker<Bundle> webResourceTracker;
 
+    private WebResourceUtil webResourceUtil;
+
     @Activate
     public void activate(final BundleContext context, final Map<String, Object> configuration) {
         this.bundleContext = context;
         this.componentConfiguration = configuration;
-        servicePid = (String) configuration.get(Constants.SERVICE_PID);
 
-        String alias = (String) configuration.get(WebResourceConstants.PROP_ALIAS);
-        if ((alias == null) || alias.trim().equals("")) {
-            throw new ComponentException(servicePid + " - Property alias must be defined");
-        }
+        registerWebResourceContainer();
+
+        this.webResourceUtil = new WebResourceUtil(resourceContainer);
 
         webResourceTracker = new WebResourceBundleTracker(context);
         webResourceTracker.open();
 
         registerServletFactory();
 
-        registerWebConsolePlugin(alias);
+        registerWebConsolePlugin();
     }
 
     @Deactivate
     public void deactivate() {
         webResourceTracker.close();
+        if (resourceContainerSR != null) {
+            resourceContainerSR.unregister();
+        }
         if (pluginSR != null) {
             pluginSR.unregister();
         }
@@ -183,19 +187,28 @@ public class WebResourceExtender {
     }
 
     private void registerServletFactory() {
-        WebResourceServletFactory webResourceServletFactory = new WebResourceServletFactory(resourceContainer);
+        WebResourceServletFactory webResourceServletFactory = new WebResourceServletFactory(resourceContainer,
+                webResourceUtil);
         Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
         serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource ServletFactory");
         servletFactorySR = bundleContext.registerService(ServletFactory.class, webResourceServletFactory, serviceProps);
     }
 
-    private void registerWebConsolePlugin(String alias) {
-        WebResourceWebConsolePlugin webConsolePlugin = new WebResourceWebConsolePlugin(resourceContainer, alias);
+    private void registerWebConsolePlugin() {
+        WebResourceWebConsolePlugin webConsolePlugin = new WebResourceWebConsolePlugin(resourceContainer,
+                webResourceUtil);
         Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
         serviceProps.put("felix.webconsole.label", "everit-webresources");
         serviceProps.put("felix.webconsole.title", "Everit Webresource");
         serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource WebConsole plugin");
         pluginSR = bundleContext.registerService(Servlet.class, webConsolePlugin, serviceProps);
+    }
+
+    private void registerWebResourceContainer() {
+        Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
+        serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource Container (read-only)");
+        resourceContainerSR = bundleContext
+                .registerService(WebResourceContainer.class, resourceContainer, serviceProps);
     }
 
     private String resolveFileName(final URL resourceURL) {

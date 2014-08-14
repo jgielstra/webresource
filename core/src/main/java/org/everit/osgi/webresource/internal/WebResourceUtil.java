@@ -19,15 +19,36 @@ package org.everit.osgi.webresource.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.Properties;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.everit.osgi.webresource.ContentEncoding;
+import org.everit.osgi.webresource.WebResource;
+import org.everit.osgi.webresource.WebResourceConstants;
+import org.everit.osgi.webresource.WebResourceContainer;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public class WebResourceUtil {
 
-    private static final Properties DEFAULT_CONTENT_TYPES;
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat
+            .forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
+            .withLocale(Locale.US).withZone(DateTimeZone.forID("GMT"));
 
     private static final String UNKNOWN_CONTENT_TYPE = "application/octet-stream";
 
-    static {
+    private final Properties DEFAULT_CONTENT_TYPES;
+
+    private final WebResourceContainer resourceContainer;
+
+    public WebResourceUtil(WebResourceContainer resourceContainer) {
+        this.resourceContainer = resourceContainer;
         DEFAULT_CONTENT_TYPES = new Properties();
         try (InputStream inputStream = WebResourceUtil.class
                 .getResourceAsStream("/META-INF/default-content-types.properties")) {
@@ -37,7 +58,59 @@ public class WebResourceUtil {
         }
     }
 
-    public static String resolveContentType(final URL url) {
+    private boolean etagMatchFound(final HttpServletRequest request, final WebResource webResource) {
+        String ifNoneMatchHeader = request.getHeader("If-None-Match");
+        if (ifNoneMatchHeader == null) {
+            return false;
+        }
+        String[] etags = ifNoneMatchHeader.split(",");
+        int i = 0;
+        int n = etags.length;
+        boolean matchFound = false;
+        while (!matchFound && (i < n)) {
+            String etag = etags[i].trim();
+            if (etag.equals("\"" + webResource.getEtag() + "\"")) {
+                matchFound = true;
+            } else {
+                i++;
+            }
+        }
+        return matchFound;
+
+    }
+
+    public void findWebResourceAndWriteResponse(HttpServletRequest req, HttpServletResponse resp, String pathInfo) {
+        int lastIndexOfSlash = pathInfo.lastIndexOf('/');
+
+        if (lastIndexOfSlash == (pathInfo.length() - 1)) {
+            http404(resp);
+            return;
+        }
+
+        String resourceName = pathInfo.substring(lastIndexOfSlash + 1);
+
+        String lib = "";
+        if (lastIndexOfSlash > 0) {
+            lib = pathInfo.substring(1, lastIndexOfSlash);
+        }
+
+        String version = req.getParameter(WebResourceConstants.PARAM_VERSION);
+
+        Optional<WebResource> optionalWebResource = resourceContainer.findWebResource(lib, resourceName, version);
+
+        writeWebResourceToResponse(req, resp, optionalWebResource);
+    }
+
+    private void http404(final HttpServletResponse resp) {
+        try {
+            resp.sendError(404, "Resource cannot found");
+        } catch (IOException e) {
+            // TODO
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String resolveContentType(final URL url) {
         String extension = url.toExternalForm();
         int lastIndexOfSlash = extension.lastIndexOf('/');
 
@@ -67,6 +140,48 @@ public class WebResourceUtil {
             return UNKNOWN_CONTENT_TYPE;
         } else {
             return contentType;
+        }
+    }
+
+    private void writeWebResourceToResponse(HttpServletRequest req, HttpServletResponse resp,
+            Optional<WebResource> optionalwebResource) {
+        if (!optionalwebResource.isPresent()) {
+            http404(resp);
+            return;
+        }
+
+        WebResource webResource = optionalwebResource.get();
+        resp.setContentType(webResource.getContentType());
+        resp.setHeader("Last-Modified", DATE_TIME_FORMATTER.print(webResource.getLastModified()));
+        resp.setHeader("ETag", "\"" + webResource.getEtag() + "\"");
+
+        ContentEncoding contentEncoding = ContentEncoding.resolveEncoding(req);
+        resp.setContentLength((int) webResource.getContentLength(contentEncoding));
+
+        if (!ContentEncoding.RAW.equals(contentEncoding)) {
+            resp.setHeader("Content-Encoding", contentEncoding.getHeaderValue());
+        }
+
+        if (etagMatchFound(req, webResource)) {
+            resp.setStatus(304);
+            return;
+        }
+
+        try {
+            ServletOutputStream out = resp.getOutputStream();
+            InputStream in = webResource.getInputStream(contentEncoding, 0);
+
+            byte[] buf = new byte[1024];
+            int r = in.read(buf);
+            while (r > -1) {
+                out.write(buf, 0, r);
+                r = in.read(buf);
+            }
+
+            out.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            throw new RuntimeException(e);
         }
     }
 }

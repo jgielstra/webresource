@@ -30,29 +30,59 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.everit.osgi.webresource.ContentEncoding;
+import org.everit.osgi.webresource.WebResourceConstants;
 import org.osgi.framework.Version;
 
 public class WebResourceWebConsolePlugin extends HttpServlet {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
-    private final WebResourceContainer resourceContainer;
-    private final String aliasPrefix;
+    private final WebResourceContainerImpl resourceContainer;
+    private final WebResourceUtil webResourceUtil;
 
-    public WebResourceWebConsolePlugin(final WebResourceContainer resourceContainer, String alias) {
-        if (alias == null || alias.trim().equals("")) {
-            this.aliasPrefix = "";
-        } else {
-            aliasPrefix = alias;
-        }
+    public WebResourceWebConsolePlugin(final WebResourceContainerImpl resourceContainer,
+            final WebResourceUtil webResourceUtil) {
         this.resourceContainer = resourceContainer;
+        this.webResourceUtil = webResourceUtil;
     }
 
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
             IOException {
+        String pluginRootURI = (String) req.getAttribute("felix.webconsole.pluginRoot");
+        String requestURI = req.getRequestURI();
+        if (requestURI.equals(pluginRootURI)) {
+            respondPluginPage(req, resp, pluginRootURI);
+        } else {
+            String requestPath = requestURI.substring(pluginRootURI.length());
+
+            resp.reset();
+            webResourceUtil.findWebResourceAndWriteResponse(req, resp, requestPath);
+        }
+    }
+
+    public String getLabel()
+    {
+        return "everit-webresource";
+    }
+
+    private String getStringValue(final Integer value) {
+        if (value == null) {
+            return "empty";
+        } else {
+            return value.toString();
+        }
+    }
+
+    public String getTitle()
+    {
+        return "Everit Webresource";
+    }
+
+    private void respondPluginPage(final HttpServletRequest req, final HttpServletResponse resp, String pluginRootURI)
+            throws IOException {
         PrintWriter writer = resp.getWriter();
         writer.write("<table class='content'><tr><th class='content container' colspan='8'>Web resources</th></tr>");
         writer.write("<tr><th class='content'>Library</th>");
@@ -90,10 +120,11 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
                     for (WebResourceImpl resource : resources) {
                         writer.write("<tr><td class='content'>" + library + "</td>");
 
-                        writer.write("<td class='content'><a href=\"" + aliasPrefix + "/" + library + "/" + fileName
-                                + "?webresource_version=[" + version.toString() + "," + version.toString() + "]\">"
-                                + fileName
-                                + "</a></td>");
+                        writer.write("<td class='content'><a href=\"" + pluginRootURI + "/" + library
+                                + (("".equals(library)) ? "" : "/")
+                                + fileName + "?" + WebResourceConstants.PARAM_VERSION + "=["
+                                + version.toString() + "," + version.toString() + "]\">" + fileName + "</a></td>");
+
                         writer.write("<td class='content'>" + version + "</td>");
                         writer.write("<td class='content'>" + resource.getContentType() + "</td>");
                         writer.write("<td class='content'>" + resource.getRawLength() + "</td>");
@@ -127,23 +158,5 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
         writer.write("<tr><td class='content'>Sum</td><td class='content'>"
                 + format.format(rawCacheSizeSum + deflateCacheSizeSum + gzipCacheSizeSum) + "</td></tr>");
         writer.write("</table>");
-    }
-
-    public String getLabel()
-    {
-        return "everit-webresource";
-    }
-
-    private String getStringValue(final Integer value) {
-        if (value == null) {
-            return "empty";
-        } else {
-            return value.toString();
-        }
-    }
-
-    public String getTitle()
-    {
-        return "Everit Webresource";
     }
 }

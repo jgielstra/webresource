@@ -16,17 +16,25 @@
  */
 package org.everit.osgi.webresource;
 
-public interface WebResourceLocator {
+import java.util.Optional;
+
+public interface WebResourceContainer {
 
     /**
      *
      * @param lib
-     * @param file
-     * @param version
-     *            The version. Range expression is accepted.
-     * @return The full path of the web resource or null if the web resource does not exist.
+     *            Name of the library where the resource is located.
+     * @param resourceName
+     *            Name of the resource / file.
+     * @param versionRange
+     *            A version range to identify the web resource exactly.
+     * @return The web resource if found.
+     * @throws NullPointerException
+     *             if lib or resourceName is null.
+     * @throws IllegalArgumentException
+     *             if the version range is not in the expected format.
      */
-    WebResource resolveWebResource(String lib, String file, String version,
-            boolean appendLastModifiedParameter);
+    Optional<WebResource> findWebResource(String lib, String resourceName, String versionRange)
+            throws IllegalArgumentException;
 
 }

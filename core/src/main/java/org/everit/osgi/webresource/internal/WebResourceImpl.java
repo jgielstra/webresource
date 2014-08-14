@@ -61,10 +61,10 @@ public class WebResourceImpl implements WebResource {
     private final Version version;
 
     public WebResourceImpl(final Bundle bundle, final String library, final String fileName, final URL resourceURL,
-            final Version version) {
+            final Version version, String contentType) {
         this.resourceURL = resourceURL;
         this.bundle = bundle;
-        contentType = WebResourceUtil.resolveContentType(resourceURL);
+        this.contentType = contentType;
         try {
             URLConnection urlConnection = resourceURL.openConnection();
             lastModified = urlConnection.getLastModified();
@@ -129,7 +129,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getBundle()
      */
     @Override
@@ -160,7 +160,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getContentLength(org.everit.osgi.webresource.internal.
      * ContentEncoding)
      */
@@ -171,7 +171,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getContentType()
      */
     @Override
@@ -186,7 +186,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getFileName()
      */
     @Override
@@ -196,7 +196,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.everit.osgi.webresource.internal.WebResource#getInputStream(org.everit.osgi.webresource.internal.ContentEncoding
      * , int)
@@ -211,7 +211,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getLastModified()
      */
     @Override
@@ -221,7 +221,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getLibrary()
      */
     @Override
@@ -235,7 +235,7 @@ public class WebResourceImpl implements WebResource {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.everit.osgi.webresource.internal.WebResource#getVersion()
      */
     @Override

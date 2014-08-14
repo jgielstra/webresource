@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.everit.config</groupId>
     <artifactId>org.everit.config.oss</artifactId>
-    <version>5.0.0</version>
+    <version>5.0.1</version>
   </parent>
 
   <groupId>org.everit.osgi</groupId>
@@ -38,8 +38,8 @@
 
   <properties>
     <projectpath>webresource</projectpath>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <scm>
@@ -136,14 +136,14 @@
       <version>2.3</version>
     </dependency>
     <dependency>
-      <groupId>org.ow2.util.bundles</groupId>
-      <artifactId>felix-utils-1.2.0</artifactId>
-      <version>1.0.0</version>
+      <groupId>org.everit.osgi.bundles</groupId>
+      <artifactId>org.everit.osgi.bundles.org.apache.felix.utils</artifactId>
+      <version>1.6.0</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.apache.felix.http.servlet-api</artifactId>
-      <version>1.0.0</version>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.1.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
