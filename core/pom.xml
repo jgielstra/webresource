@@ -116,7 +116,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>4.3.1</version>
+      <version>6.0.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -145,11 +145,6 @@
       <artifactId>javax.servlet-api</artifactId>
       <version>3.1.0</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.everit.osgi</groupId>
-      <artifactId>org.everit.osgi.service.servlet</artifactId>
-      <version>1.0.0</version>
     </dependency>
   </dependencies>
 </project>

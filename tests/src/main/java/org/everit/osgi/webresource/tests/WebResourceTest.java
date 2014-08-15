@@ -16,9 +16,6 @@
  */
 package org.everit.osgi.webresource.tests;
 
-import java.util.Dictionary;
-import java.util.Hashtable;
-
 import javax.servlet.Servlet;
 
 import org.apache.felix.scr.annotations.Activate;
@@ -29,9 +26,12 @@ import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
-import org.everit.osgi.service.servlet.ServletFactory;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
 
 @Component(immediate = true, policy = ConfigurationPolicy.OPTIONAL)
@@ -42,24 +42,44 @@ import org.osgi.framework.ServiceRegistration;
 @Service(value = WebResourceTest.class)
 public class WebResourceTest {
 
-    @Reference(bind = "setWebResourceServletFactory")
-    private ServletFactory webResourceServletFactory;
+    private Server server;
     private ServiceRegistration<Servlet> servletSR;
+    @Reference(bind = "setWebResourceServlet", target = "(" + Constants.SERVICE_DESCRIPTION
+            + "=Everit WebResource Servlet)")
+    private Servlet webResourceServlet;
 
     @Activate
     public void activate(BundleContext context) {
-        Servlet servlet = webResourceServletFactory.createServlet();
-        Dictionary<String, Object> serviceProps = new Hashtable<String, Object>();
-        serviceProps.put("alias", "/static");
-        servletSR = context.registerService(Servlet.class, servlet, serviceProps);
+        server = new Server(8888);
+        ServletContextHandler servletContextHandler = new ServletContextHandler();
+        server.setHandler(servletContextHandler);
+
+        servletContextHandler.addServlet(new ServletHolder("myServlet", webResourceServlet), "/*");
+
+        try {
+            server.start();
+            System.out.println("JETTY STARTED AT PORT " + server.getConnectors()[0].getPort());
+        } catch (Exception e) {
+            try {
+                server.stop();
+            } catch (Exception e1) {
+                e.addSuppressed(e1);
+            }
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Deactivate
     public void deactivate() {
-        servletSR.unregister();
+        try {
+            server.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void setWebResourceServletFactory(ServletFactory webResourceServletFactory) {
-        this.webResourceServletFactory = webResourceServletFactory;
+    public void setWebResourceServlet(Servlet webResourceServlet) {
+        this.webResourceServlet = webResourceServlet;
     }
 }

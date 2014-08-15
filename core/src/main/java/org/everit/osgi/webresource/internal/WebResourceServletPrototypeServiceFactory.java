@@ -18,22 +18,30 @@ package org.everit.osgi.webresource.internal;
 
 import javax.servlet.Servlet;
 
-import org.everit.osgi.service.servlet.ServletFactory;
 import org.everit.osgi.webresource.WebResourceContainer;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceRegistration;
 
-public class WebResourceServletFactory implements ServletFactory {
+public class WebResourceServletPrototypeServiceFactory implements PrototypeServiceFactory<Servlet> {
 
-    private final WebResourceContainer resourceContainer;
+    private final WebResourceContainer webResourceContainer;
     private final WebResourceUtil webResourceUtil;
 
-    public WebResourceServletFactory(WebResourceContainer resourceContainer, WebResourceUtil webResourceUtil) {
-        this.resourceContainer = resourceContainer;
+    public WebResourceServletPrototypeServiceFactory(WebResourceContainer webResourceContainer,
+            WebResourceUtil webResourceUtil) {
+        this.webResourceContainer = webResourceContainer;
         this.webResourceUtil = webResourceUtil;
     }
 
     @Override
-    public Servlet createServlet() {
-        return new WebResourceServlet(resourceContainer, webResourceUtil);
+    public Servlet getService(Bundle bundle, ServiceRegistration<Servlet> registration) {
+        return new WebResourceServlet(webResourceContainer, webResourceUtil);
+    }
+
+    @Override
+    public void ungetService(Bundle bundle, ServiceRegistration<Servlet> registration, Servlet service) {
+        // Do nothing as the lifecycle of the servlet is handled in its init and destroy method.
     }
 
 }
