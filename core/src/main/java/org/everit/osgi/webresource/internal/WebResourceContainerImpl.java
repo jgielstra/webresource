@@ -19,7 +19,7 @@ package org.everit.osgi.webresource.internal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+//import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -28,6 +28,8 @@ import org.apache.felix.utils.version.VersionRange;
 import org.everit.osgi.webresource.WebResource;
 import org.everit.osgi.webresource.WebResourceContainer;
 import org.osgi.framework.Bundle;
+
+import com.google.common.base.Optional;
 
 public class WebResourceContainerImpl implements WebResourceContainer {
 
@@ -60,7 +62,7 @@ public class WebResourceContainerImpl implements WebResourceContainer {
 
         LibContainer libContainer = libContainersByName.get(lib);
         if (libContainer == null) {
-            return Optional.empty();
+            return Optional.absent();
         }
 
         VersionRange versionRange = VersionRange.parseVersionRange(version);

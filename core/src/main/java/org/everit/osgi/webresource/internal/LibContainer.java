@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
-import java.util.Optional;
+//import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -30,22 +30,24 @@ import org.apache.felix.utils.version.VersionRange;
 import org.everit.osgi.webresource.WebResource;
 import org.osgi.framework.Version;
 
+import com.google.common.base.Optional;
+
 public class LibContainer {
 
-    private final Map<String, NavigableMap<Version, Set<WebResourceImpl>>> versionedResourcesByName =
+    private final Map<String, NavigableMap<Version, Set<WebResource>>> versionedResourcesByName =
             new ConcurrentSkipListMap<>();
 
-    public synchronized void addWebResource(final WebResourceImpl resource) {
+    public synchronized void addWebResource(final WebResource resource) {
         String fileName = resource.getFileName();
-        NavigableMap<Version, Set<WebResourceImpl>> resourcesByVersion = versionedResourcesByName.get(fileName);
+        NavigableMap<Version, Set<WebResource>> resourcesByVersion = versionedResourcesByName.get(fileName);
         if (resourcesByVersion == null) {
             resourcesByVersion = new ConcurrentSkipListMap<>();
             versionedResourcesByName.put(fileName, resourcesByVersion);
         }
         Version version = resource.getVersion();
-        Set<WebResourceImpl> resources = resourcesByVersion.get(version);
+        Set<WebResource> resources = resourcesByVersion.get(version);
         if (resources == null) {
-            resources = Collections.newSetFromMap(new ConcurrentHashMap<WebResourceImpl, Boolean>());
+            resources = Collections.newSetFromMap(new ConcurrentHashMap<WebResource, Boolean>());
             resourcesByVersion.put(version, resources);
         }
         resources.add(resource);
@@ -53,10 +55,10 @@ public class LibContainer {
     }
 
     public Optional<WebResource> findWebResource(final String resourceName, final VersionRange versionRange) {
-        NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion = versionedResourcesByName.get(resourceName);
+        NavigableMap<Version, Set<WebResource>> resourceByVersion = versionedResourcesByName.get(resourceName);
         if ((resourceByVersion == null) || (resourceByVersion.size() == 0)) {
             // There is no resource by the name
-            return Optional.empty();
+            return Optional.absent();
         }
         if ((versionRange == null) || versionRange.getCeiling().equals(VersionRange.INFINITE_VERSION)) {
             // Selecting the highest version of the resource
@@ -68,22 +70,22 @@ public class LibContainer {
                 if (versionRange.contains(version)) {
                     return Optional.of(webResource);
                 } else {
-                    return Optional.empty();
+                    return Optional.absent();
                 }
             } else {
-                return Optional.empty();
+                return Optional.absent();
             }
         }
 
         if (versionRange.isPointVersion()) {
             // Selecting an exact version of resource. Normally comes with expression [x, x] where x is the same.
-            Set<WebResourceImpl> resources = resourceByVersion.get(versionRange.getFloor());
+            Set<WebResource> resources = resourceByVersion.get(versionRange.getFloor());
             return selectResourceFromSet(resources);
         }
 
         Optional<WebResource> result = null;
         Version ceilingVersion = versionRange.getCeiling();
-        Entry<Version, Set<WebResourceImpl>> potentialEntry = null;
+        Entry<Version, Set<WebResource>> potentialEntry = null;
         if (!versionRange.isOpenCeiling()) {
             potentialEntry = resourceByVersion.floorEntry(ceilingVersion);
         } else {
@@ -96,7 +98,7 @@ public class LibContainer {
         return result;
     }
 
-    Map<String, NavigableMap<Version, Set<WebResourceImpl>>> getVersionedResourcesByName() {
+    Map<String, NavigableMap<Version, Set<WebResource>>> getVersionedResourcesByName() {
         return versionedResourcesByName;
     }
 
@@ -106,9 +108,9 @@ public class LibContainer {
 
     public synchronized void removeWebResource(final WebResource resource) {
         String fileName = resource.getFileName();
-        NavigableMap<Version, Set<WebResourceImpl>> resourcesByVersion = versionedResourcesByName.get(fileName);
+        NavigableMap<Version, Set<WebResource>> resourcesByVersion = versionedResourcesByName.get(fileName);
         Version version = resource.getVersion();
-        Set<WebResourceImpl> resources = resourcesByVersion.get(version);
+        Set<WebResource> resources = resourcesByVersion.get(version);
         resources.remove(resource);
         if (resources.size() == 0) {
             resourcesByVersion.remove(version);
@@ -118,27 +120,27 @@ public class LibContainer {
         }
     }
 
-    private Optional<WebResource> selectResourceFromSet(final Set<WebResourceImpl> resources) {
+    private Optional<WebResource> selectResourceFromSet(final Set<WebResource> resources) {
         if (resources == null) {
             return null;
         }
         // TODO what if the set gets empty in the moment where the iterator is requested.
-        Iterator<WebResourceImpl> iterator = resources.iterator();
+        Iterator<WebResource> iterator = resources.iterator();
         if (iterator.hasNext()) {
             return Optional.of(iterator.next());
         } else {
-            return Optional.empty();
+            return Optional.absent();
         }
     }
 
     private Optional<WebResource> selectResourceWithHighestVersion(
-            final NavigableMap<Version, Set<WebResourceImpl>> resourceByVersion) {
-        Entry<Version, Set<WebResourceImpl>> lastEntry = resourceByVersion.lastEntry();
+            final NavigableMap<Version, Set<WebResource>> resourceByVersion) {
+        Entry<Version, Set<WebResource>> lastEntry = resourceByVersion.lastEntry();
         if (lastEntry != null) {
             return selectResourceFromSet(lastEntry.getValue());
         } else {
             // This could happen if the resource is removed on a parallel thread after the size is checked.
-            return Optional.empty();
+            return Optional.absent();
         }
     }
 }

@@ -16,7 +16,9 @@
  */
 package org.everit.osgi.webresource;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
+
+//import java.util.Optional;
 
 public interface WebResourceContainer {
 

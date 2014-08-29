@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.everit.osgi.webresource.ContentEncoding;
+import org.everit.osgi.webresource.WebResource;
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.osgi.framework.Version;
 
@@ -104,20 +105,20 @@ public class WebResourceWebConsolePlugin extends HttpServlet {
             String library = libContainersByNameEntry.getKey();
             LibContainer libContainer = libContainersByNameEntry.getValue();
 
-            Map<String, NavigableMap<Version, Set<WebResourceImpl>>> versionedResourcesByName = libContainer
+            Map<String, NavigableMap<Version, Set<WebResource>>> versionedResourcesByName = libContainer
                     .getVersionedResourcesByName();
 
-            for (Entry<String, NavigableMap<Version, Set<WebResourceImpl>>> versionedResourcesByNameEntry : versionedResourcesByName
+            for (Entry<String, NavigableMap<Version, Set<WebResource>>> versionedResourcesByNameEntry : versionedResourcesByName
                     .entrySet()) {
 
                 String fileName = versionedResourcesByNameEntry.getKey();
-                NavigableMap<Version, Set<WebResourceImpl>> resourcesByVersion = versionedResourcesByNameEntry
+                NavigableMap<Version, Set<WebResource>> resourcesByVersion = versionedResourcesByNameEntry
                         .getValue();
 
-                for (Entry<Version, Set<WebResourceImpl>> resourcesByVersionEntry : resourcesByVersion.entrySet()) {
+                for (Entry<Version, Set<WebResource>> resourcesByVersionEntry : resourcesByVersion.entrySet()) {
                     Version version = resourcesByVersionEntry.getKey();
-                    Set<WebResourceImpl> resources = resourcesByVersionEntry.getValue();
-                    for (WebResourceImpl resource : resources) {
+                    Set<WebResource> resources = resourcesByVersionEntry.getValue();
+                    for (WebResource resource : resources) {
                         writer.write("<tr><td class='content'>" + library + "</td>");
 
                         writer.write("<td class='content'><a href=\"" + pluginRootURI + "/" + library
