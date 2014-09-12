@@ -44,5 +44,7 @@ public interface WebResource {
     String getLibrary();
 
     Version getVersion();
+    
+    int getRawLength();
 
 }

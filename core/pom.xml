@@ -38,8 +38,8 @@
 
   <properties>
     <projectpath>webresource</projectpath>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
   </properties>
 
   <scm>
@@ -89,10 +89,10 @@
           <instructions>
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Import-Package>
-              javax.servlet.*;version="[2.6,4)",
+              javax.servlet.*;version="[2.5,4)",
               *
             </Import-Package>
-            <Export-Package>${project.artifactId}</Export-Package>
+            <Export-Package>${project.artifactId}.*</Export-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -116,7 +116,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>4.3.1</version>
+      <version>5.0.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -142,14 +142,20 @@
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>3.1.0</version>
+      <artifactId>servlet-api</artifactId>
+      <version>2.5</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
+<!--   <dependency>
       <groupId>org.everit.osgi</groupId>
       <artifactId>org.everit.osgi.service.servlet</artifactId>
       <version>1.0.0</version>
+    </dependency>-->
+    <dependency>
+    	<groupId>com.google.guava</groupId>
+    	<artifactId>guava</artifactId>
+    	<version>17.0</version>
+    	<type>bundle</type>
     </dependency>
   </dependencies>
 </project>

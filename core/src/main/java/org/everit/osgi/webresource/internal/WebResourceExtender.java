@@ -32,7 +32,7 @@ import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
-import org.everit.osgi.service.servlet.ServletFactory;
+//import org.everit.osgi.service.servlet.ServletFactory;
 import org.everit.osgi.webresource.WebResourceConstants;
 import org.everit.osgi.webresource.WebResourceContainer;
 import org.osgi.framework.Bundle;
@@ -149,7 +149,7 @@ public class WebResourceExtender {
 
     private ServiceRegistration<WebResourceContainer> resourceContainerSR;
 
-    private ServiceRegistration<ServletFactory> servletFactorySR;
+    private ServiceRegistration<WebResourceServletFactory> servletFactorySR;
 
     private BundleTracker<Bundle> webResourceTracker;
 
@@ -191,7 +191,7 @@ public class WebResourceExtender {
                 webResourceUtil);
         Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
         serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource ServletFactory");
-        servletFactorySR = bundleContext.registerService(ServletFactory.class, webResourceServletFactory, serviceProps);
+        servletFactorySR = bundleContext.registerService(WebResourceServletFactory.class, webResourceServletFactory, serviceProps);
     }
 
     private void registerWebConsolePlugin() {

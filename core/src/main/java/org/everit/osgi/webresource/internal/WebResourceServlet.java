@@ -23,7 +23,7 @@ import java.util.Objects;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
+//import javax.servlet.ServletRegistration;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -73,15 +73,15 @@ public class WebResourceServlet extends HttpServlet {
         Objects.requireNonNull(servletName, "Servlet name must not be null!");
         ServletContext servletContext = config.getServletContext();
         String servletContextPath = servletContext.getContextPath();
-        ServletRegistration servletRegistration = servletContext.getServletRegistration(servletName);
-        Collection<String> mappings = servletRegistration.getMappings();
-        System.out.println("Servlet mappings: " + mappings);
+       // ServletRegistration servletRegistration = servletContext.getServletRegistration(servletName);
+       // Collection<String> mappings = servletRegistration.getMappings();
+        //System.out.println("Servlet mappings: " + mappings);
         System.out.println("Servlet context path: " + servletContextPath);
 
         if (servletContext.getMajorVersion() > 3
                 || (servletContext.getMajorVersion() == 3 && servletContext.getMinorVersion() > 1)) {
 
-            System.out.println("Virtual host : " + servletContext.getVirtualServerName());
+         //   System.out.println("Virtual host : " + servletContext.getVirtualServerName());
         }
 
     }

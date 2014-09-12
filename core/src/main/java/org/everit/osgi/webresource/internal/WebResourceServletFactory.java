@@ -18,10 +18,10 @@ package org.everit.osgi.webresource.internal;
 
 import javax.servlet.Servlet;
 
-import org.everit.osgi.service.servlet.ServletFactory;
+//import org.everit.osgi.service.servlet.ServletFactory;
 import org.everit.osgi.webresource.WebResourceContainer;
 
-public class WebResourceServletFactory implements ServletFactory {
+public class WebResourceServletFactory { //implements ServletFactory {
 
     private final WebResourceContainer resourceContainer;
     private final WebResourceUtil webResourceUtil;
@@ -31,7 +31,7 @@ public class WebResourceServletFactory implements ServletFactory {
         this.webResourceUtil = webResourceUtil;
     }
 
-    @Override
+   // @Override
     public Servlet createServlet() {
         return new WebResourceServlet(resourceContainer, webResourceUtil);
     }

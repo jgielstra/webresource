@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Properties;
 
 import javax.servlet.ServletOutputStream;
@@ -34,6 +33,8 @@ import org.everit.osgi.webresource.WebResourceContainer;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+
+import com.google.common.base.Optional;
 
 public class WebResourceUtil {
 
@@ -103,7 +104,7 @@ public class WebResourceUtil {
 
     private void http404(final HttpServletResponse resp) {
         try {
-            resp.sendError(404, "Resource cannot found");
+            resp.sendError(404, "Resource cannot be found");
         } catch (IOException e) {
             // TODO
             throw new RuntimeException(e);
