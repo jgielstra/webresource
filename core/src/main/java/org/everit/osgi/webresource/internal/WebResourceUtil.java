@@ -81,6 +81,10 @@ public class WebResourceUtil {
     }
 
     public void findWebResourceAndWriteResponse(HttpServletRequest req, HttpServletResponse resp, String pathInfo) {
+    	String resourceName="index.html";  // should do the usual "default" list index.html, index.htm, etc
+        String lib = "";
+
+    	if ( pathInfo !=null){
         int lastIndexOfSlash = pathInfo.lastIndexOf('/');
 
         if (lastIndexOfSlash == (pathInfo.length() - 1)) {
@@ -88,13 +92,12 @@ public class WebResourceUtil {
             return;
         }
 
-        String resourceName = pathInfo.substring(lastIndexOfSlash + 1);
+        resourceName = pathInfo.substring(lastIndexOfSlash + 1);
 
-        String lib = "";
         if (lastIndexOfSlash > 0) {
             lib = pathInfo.substring(1, lastIndexOfSlash);
         }
-
+    	}
         String version = req.getParameter(WebResourceConstants.PARAM_VERSION);
 
         Optional<WebResource> optionalWebResource = resourceContainer.findWebResource(lib, resourceName, version);
@@ -104,7 +107,7 @@ public class WebResourceUtil {
 
     private void http404(final HttpServletResponse resp) {
         try {
-            resp.sendError(404, "Resource cannot found");
+            resp.sendError(404, "Resource cannot be found");
         } catch (IOException e) {
             // TODO
             throw new RuntimeException(e);

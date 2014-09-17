@@ -148,7 +148,7 @@ public class WebResourceExtender {
 
     private ServiceRegistration<WebResourceContainer> resourceContainerSR;
 
-    private ServiceRegistration<Servlet> servletFactorySR;
+    private ServiceRegistration<WebResourceServiceFactory> servletFactorySR;
 
     private BundleTracker<Bundle> webResourceTracker;
 
@@ -187,13 +187,13 @@ public class WebResourceExtender {
 
     @SuppressWarnings("unchecked")
     private void registerServletFactory() {
-        WebResourceServletPrototypeServiceFactory webResourceServletFactory =
-                new WebResourceServletPrototypeServiceFactory(resourceContainer, webResourceUtil);
+        WebResourceServiceFactory webResourceServletFactory =
+                new WebResourceServiceFactory(resourceContainer, webResourceUtil);
 
         Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
-        serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource Servlet");
-
-        servletFactorySR = (ServiceRegistration<Servlet>) bundleContext.registerService(
+        serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource ServletFactory");
+  
+        servletFactorySR = (ServiceRegistration<WebResourceServiceFactory>) bundleContext.registerService(
                 new String[] { Servlet.class.getName(), WebResourceServlet.class.getName() },
                 webResourceServletFactory, serviceProps);
     }

@@ -33,6 +33,7 @@ import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.ServiceFactory;
 
 @Component(immediate = true, policy = ConfigurationPolicy.OPTIONAL)
 @Properties({
@@ -47,7 +48,7 @@ public class WebResourceTest {
     @Reference(bind = "setWebResourceServlet", target = "(" + Constants.SERVICE_DESCRIPTION
             + "=Everit WebResource Servlet)")
     private Servlet webResourceServlet;
-
+    private ServiceFactory webResourceServletFactory;
     @Activate
     public void activate(BundleContext context) {
         server = new Server(8888);
@@ -79,7 +80,7 @@ public class WebResourceTest {
         }
     }
 
-    public void setWebResourceServlet(Servlet webResourceServlet) {
-        this.webResourceServlet = webResourceServlet;
+    public void setWebResourceServletFactory(ServiceFactory webResourceServletFactory) {
+        this.webResourceServletFactory = webResourceServletFactory;
     }
 }
