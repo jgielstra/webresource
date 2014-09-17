@@ -149,7 +149,7 @@ public class WebResourceExtender {
 
     private ServiceRegistration<WebResourceContainer> resourceContainerSR;
 
-    private ServiceRegistration<WebResourceServletFactory> servletFactorySR;
+    private ServiceRegistration<WebResourceServiceFactory> servletFactorySR;
 
     private BundleTracker<Bundle> webResourceTracker;
 
@@ -186,12 +186,17 @@ public class WebResourceExtender {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void registerServletFactory() {
-        WebResourceServletFactory webResourceServletFactory = new WebResourceServletFactory(resourceContainer,
-                webResourceUtil);
+        WebResourceServiceFactory webResourceServletFactory =
+                new WebResourceServiceFactory(resourceContainer, webResourceUtil);
+
         Dictionary<String, Object> serviceProps = new Hashtable<>(componentConfiguration);
         serviceProps.put(Constants.SERVICE_DESCRIPTION, "Everit WebResource ServletFactory");
-        servletFactorySR = bundleContext.registerService(WebResourceServletFactory.class, webResourceServletFactory, serviceProps);
+  
+        servletFactorySR = (ServiceRegistration<WebResourceServiceFactory>) bundleContext.registerService(
+                new String[] { Servlet.class.getName(), WebResourceServlet.class.getName() },
+                webResourceServletFactory, serviceProps);
     }
 
     private void registerWebConsolePlugin() {

@@ -19,6 +19,7 @@ package org.everit.osgi.webresource.internal;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -37,6 +38,8 @@ public class WebResourceServlet extends HttpServlet {
      */
     private static final long serialVersionUID = -5267972580396643677L;
 
+    private final AtomicInteger initCount = new AtomicInteger();
+
     private final WebResourceContainer resourceContainer;
 
     private final WebResourceUtil webResourceUtil;
@@ -48,7 +51,10 @@ public class WebResourceServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        // TODO Auto-generated method stub
+        if (initCount.decrementAndGet() < 0) {
+            initCount.incrementAndGet();
+            throw new IllegalStateException("WebResource servlet was destroyed more times than it was initialized");
+        }
         super.destroy();
     }
 
@@ -67,21 +73,33 @@ public class WebResourceServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+        if (initCount.incrementAndGet() > 1) {
+            initCount.decrementAndGet();
+            throw new IllegalStateException("WebResource servlet instance cannot be initialized more than once.");
+        }
 
-        String servletName = config.getServletName();
-        Objects.requireNonNull(servletName, "Servlet name must not be null!");
-        ServletContext servletContext = config.getServletContext();
-        String servletContextPath = servletContext.getContextPath();
-       // ServletRegistration servletRegistration = servletContext.getServletRegistration(servletName);
-       // Collection<String> mappings = servletRegistration.getMappings();
-        //System.out.println("Servlet mappings: " + mappings);
-        System.out.println("Servlet context path: " + servletContextPath);
+        try {
+            super.init(config);
 
-        if (servletContext.getMajorVersion() > 3
-                || (servletContext.getMajorVersion() == 3 && servletContext.getMinorVersion() > 1)) {
+            String servletName = config.getServletName();
+            Objects.requireNonNull(servletName, "Servlet name must not be null!");
+            ServletContext servletContext = config.getServletContext();
+            if (servletContext != null) {
+                String servletContextPath = servletContext.getContextPath();
+                //ServletRegistration servletRegistration = servletContext.getServletRegistration(servletName);
+                //Collection<String> mappings = servletRegistration.getMappings();
+                //System.out.println("Servlet mappings: " + mappings);
+                System.out.println("Servlet context path: " + servletContextPath);
 
-         //   System.out.println("Virtual host : " + servletContext.getVirtualServerName());
+                if (servletContext.getMajorVersion() > 3
+                        || (servletContext.getMajorVersion() == 3 && servletContext.getMinorVersion() > 1)) {
+
+                  //  System.out.println("Virtual host : " + servletContext.getVirtualServerName());
+                }
+            }
+        } catch (RuntimeException e) {
+            initCount.decrementAndGet();
+            throw e;
         }
 
     }

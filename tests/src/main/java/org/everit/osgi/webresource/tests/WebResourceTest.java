@@ -1,5 +1,7 @@
 package org.everit.osgi.webresource.tests;
 
+import javax.servlet.Servlet;
+
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.ConfigurationPolicy;
@@ -9,7 +11,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
-import org.everit.osgi.service.servlet.ServletFactory;
+import org.osgi.framework.ServiceFactory;
 
 @Component(immediate = true, policy = ConfigurationPolicy.OPTIONAL)
 @Properties({
@@ -20,7 +22,7 @@ import org.everit.osgi.service.servlet.ServletFactory;
 public class WebResourceTest {
 
     @Reference(bind = "setWebResourceServletFactory")
-    private ServletFactory webResourceServletFactory;
+    private ServiceFactory webResourceServletFactory;
 
     @Activate
     public void activate() {
@@ -32,7 +34,7 @@ public class WebResourceTest {
 
     }
 
-    public void setWebResourceServletFactory(ServletFactory webResourceServletFactory) {
+    public void setWebResourceServletFactory(ServiceFactory webResourceServletFactory) {
         this.webResourceServletFactory = webResourceServletFactory;
     }
 }
