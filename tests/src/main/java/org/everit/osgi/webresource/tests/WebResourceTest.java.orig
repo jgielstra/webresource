@@ -45,8 +45,8 @@ public class WebResourceTest {
 
     private Server server;
     private ServiceRegistration<Servlet> servletSR;
-//    @Reference(bind = "setWebResourceServletFactory", target = "(" + Constants.SERVICE_DESCRIPTION
-//            + "=Everit WebResource Servlet)")
+    @Reference(bind = "setWebResourceServlet", target = "(" + Constants.SERVICE_DESCRIPTION
+            + "=Everit WebResource Servlet)")
     private Servlet webResourceServlet;
     private ServiceFactory webResourceServletFactory;
     @Activate
