@@ -153,10 +153,11 @@
     </dependency>
   </dependencies>
  <distributionManagement>
-    <repository>
+ 	<repository/>
+    <snapshotRepository>
       <id>nexus-repo</id>
       <url>${repo.url}</url>
-    </repository>
+    </snapshotRepository>
   </distributionManagement>
 
 </project>
