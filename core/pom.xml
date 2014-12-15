@@ -150,7 +150,13 @@
     	<groupId>com.google.guava</groupId>
     	<artifactId>guava</artifactId>
     	<version>17.0</version>
-    	<type>bundle</type>
     </dependency>
   </dependencies>
+ <distributionManagement>
+    <repository>
+      <id>nexus-repo</id>
+      <url>${repo.url}</url>
+    </repository>
+  </distributionManagement>
+
 </project>
